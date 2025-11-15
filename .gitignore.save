@@ -1,0 +1,18 @@
+build/
+devel/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# ROS bags
+*.bag
+
+# Misc
+*.swp
+*.swo

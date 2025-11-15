@@ -215,13 +215,12 @@ void AckermannController::jointCallback(const sensor_msgs::msg::JointState & msg
     transform_broadcaster_->sendTransform(transform_stamped_);
 
 
-    // // In thông tin ra console
-    // RCLCPP_INFO(get_logger(),
-    //             "Ackermann: v = %.3f [m/s], w = %.3f [rad/s], "
-    //             "x = %.2f [m], y = %.2f [m], th = %.2f [rad]",
-    //             v, w, x_, y_, theta_);
-    // RCLCPP_INFO(get_logger(), "Ackermann: linear = %.3f [m/s], angular = %.3f [rad/s]",
-    //             v, w);
+    // In thông tin ra console
+    RCLCPP_INFO_THROTTLE(
+        get_logger(), *get_clock(), 2000,   
+        "Ackermann: v = %.3f [m/s], w = %.3f [rad/s], "
+        "x = %.2f [m], y = %.2f [m], th = %.2f [rad]",
+        v, w, x_, y_, theta_);
 }
 
 

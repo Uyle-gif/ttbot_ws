@@ -14,6 +14,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # include thư mục header của chính package
 include_directories(include)
@@ -31,6 +32,7 @@ ament_target_dependencies(ackermann_controller
   tf2
   nav_msgs
   tf2_ros
+  tf2_geometry_msgs
 )
 
 install(
@@ -38,11 +40,40 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# install config + launch 
+
+
+# --- Node Stanley controller ---
+add_executable(stanley_controller
+  src/stanley_controller.cpp
+)
+ament_target_dependencies(stanley_controller
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  tf2
+  tf2_geometry_msgs
+  ament_index_cpp
+)
+
 install(
-  DIRECTORY config launch
+  TARGETS stanley_controller
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
+
+
+# install config + launch + path files
+install(
+  DIRECTORY config launch path
   DESTINATION share/${PROJECT_NAME}/
 )
+
+
+
+
+
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
