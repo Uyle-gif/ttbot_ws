@@ -77,12 +77,18 @@ Provides:
 ### 1. Source ROS2
 ```bash
 source /opt/ros/humble/setup.bash
+```
+
 ### 1. Build & source the workspace 
+```bash
 cd ~/ttbot_ws
-colcon build --symlink-install
+colcon build 
 source install/setup.bash
+```
 ### 3. Run the full system
+```bash
 ros2 launch ttbot_bringup ttbot_full_system.launch.py
+```
 
 
 
