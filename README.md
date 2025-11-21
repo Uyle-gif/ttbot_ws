@@ -77,7 +77,9 @@ Provides:
 
 ### 1. Source ROS2
 ```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 source /opt/ros/humble/setup.bash
+
 ```
 
 ### 1. Build & source the workspace 
