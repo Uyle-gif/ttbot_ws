@@ -94,6 +94,10 @@ ros2 launch ttbot_bringup ttbot_full_system.launch.py
 ```bash
 ros2 launch ttbot_controller stanley.launch.py
 ```
+### 5. Run mpc_controller
+```bash
+ros2 launch ttbot_controller mpc.launch.py
+```
 
 
 
