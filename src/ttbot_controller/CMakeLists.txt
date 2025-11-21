@@ -15,11 +15,23 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-
-
+find_package(osqp REQUIRED)
+find_package(Eigen3 REQUIRED)
 # include thư mục header của chính package
 include_directories(include)
+
+# THÊM ĐƯỜNG DẪN INCLUDE CỦA EIGEN3 VÀO ĐÂY
+include_directories(
+  include
+  ${Eigen3_INCLUDE_DIRS} # <-- Bổ sung đường dẫn header của Eigen
+)
+
+
+
+
+
+
+
 
 # --- Node Ackermann controller ---
 add_executable(ackermann_controller
@@ -35,7 +47,6 @@ ament_target_dependencies(ackermann_controller
   nav_msgs
   tf2_ros
   tf2_geometry_msgs
-  ament_index_cpp
 )
 
 install(
@@ -61,6 +72,29 @@ ament_target_dependencies(stanley_controller
 install(
   TARGETS stanley_controller
   DESTINATION lib/${PROJECT_NAME}
+)
+
+
+# --- Node mpc_controller ---
+add_executable(mpc_controller src/mpc_controller.cpp)
+
+ament_target_dependencies(mpc_controller
+    rclcpp
+    nav_msgs          # <-- ĐÃ SỬA: Cần cho Odometry
+    geometry_msgs
+    tf2
+    tf2_ros           # <-- ĐÃ SỬA: Cần cho tf2::getYaw
+    ament_index_cpp
+    tf2_geometry_msgs
+)
+
+target_link_libraries(mpc_controller
+    osqp::osqp # <-- THÊM OSQP VÀO ĐÂY
+)
+
+install(
+    TARGETS mpc_controller # <-- ĐÃ SỬA: Bỏ dòng bị lỗi
+    DESTINATION lib/${PROJECT_NAME}
 )
 
 
