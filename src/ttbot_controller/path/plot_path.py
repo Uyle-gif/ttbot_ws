@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 if len(sys.argv) > 1:
     path_file = sys.argv[1]
 else:
-    path_file = "path_u.csv"
+    path_file = "path_uturn.csv"
 
 xs = []
 ys = []
