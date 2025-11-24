@@ -43,7 +43,7 @@ MpcController::MpcController()
     desired_speed_ = this->get_parameter("desired_speed").as_double();
     wheel_base_    = this->get_parameter("wheel_base").as_double();
     double max_steer_deg = this->get_parameter("max_steer_deg").as_double();
-    path_file_     = this->get_parameter("path_file").as_string();
+    // path_file_     = this->get_parameter("path_file").as_string();
 
     N_p_    = this->get_parameter("N_p").as_int();
     dt_mpc_ = this->get_parameter("dt_mpc").as_double();
@@ -67,8 +67,16 @@ MpcController::MpcController()
     q_data_ = nullptr; l_data_ = nullptr; u_data_ = nullptr;
     // 2. Load Path
     // Tái sử dụng hàm loadPathFromCSV() đã có (cần sao chép vào tệp này hoặc khai báo bên ngoài)
-    loadPathFromCSV(); 
+
+
+   // loadPathFromCSV(); 
+
+
     current_index_ = 0;
+    has_path_ = false;
+
+
+
     // 3. Subscribers & Publishers
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/odometry/filtered", 10,
@@ -76,8 +84,38 @@ MpcController::MpcController()
 
     cmd_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/ackermann_controller/cmd_vel", 10);
 
+    path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
+        "/mpc_path", 1,
+        std::bind(&MpcController::pathCallback, this, std::placeholders::_1));
+
+
     RCLCPP_INFO(this->get_logger(), "MPC Controller initialized with N_p=%d, dt=%.2f", N_p_, dt_mpc_);
 }
+
+
+// =================================================================================
+// Path Callback: Nhận đường đi từ bên ngoài
+// =================================================================================
+void MpcController::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+{
+    path_points_.clear();
+    path_points_.reserve(msg->poses.size());
+
+    for (const auto &pose_stamped : msg->poses) {
+        double x = pose_stamped.pose.position.x;
+        double y = pose_stamped.pose.position.y;
+        path_points_.emplace_back(x, y);
+    }
+
+    current_index_ = 0;
+    has_path_ = !path_points_.empty();
+
+    RCLCPP_INFO(this->get_logger(),
+                "Received /mpc_path with %zu points", path_points_.size());
+}
+
+
+
 
 // =================================================================================
 // Destructor: Dọn dẹp bộ nhớ thủ công (Bắt buộc với OSQP)
@@ -469,7 +507,11 @@ Control MpcController::solveMPC(double ey0, double epsi0)
 
 void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-    if (path_points_.empty()) return;
+    if (!has_path_ || path_points_.empty()) {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                             "Waiting for /mpc_path...");
+        return;
+    }
 
     double x   = msg->pose.pose.position.x;
     double y   = msg->pose.pose.position.y;

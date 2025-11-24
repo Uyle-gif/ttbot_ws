@@ -5,6 +5,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "tf2/utils.h"
+#include <nav_msgs/msg/path.hpp>
 
 #include <vector>
 #include <utility>
@@ -30,6 +31,8 @@ public:
 private:
     // ==== Callbacks ====
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+    void pathCallback(const nav_msgs::msg::Path::SharedPtr msg);
+
 
     // ==== Logic MPC ====
     Control solveMPC(double ey0, double epsi0);
@@ -51,6 +54,8 @@ private:
 
     void loadPathFromCSV();
 
+    
+    
     // Index hiện tại trên đường (khởi tạo = 0 trong constructor)
     size_t current_index_;
 
@@ -87,7 +92,8 @@ private:
     double goal_tolerance_;
     bool reached_goal_;
 
-
+    // ==== Path Parameters ====
+    bool has_path_ = false;
 
 
     // ==== Tham số Tối ưu hóa (nếu sau này cần) ====
@@ -107,6 +113,7 @@ private:
     // ==== ROS ====
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
 
     // ==== OSQP Solver Data (v1.0+) ====
     OSQPSolver*   solver_   = nullptr;

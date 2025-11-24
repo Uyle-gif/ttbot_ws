@@ -93,10 +93,22 @@ target_link_libraries(mpc_controller
 )
 
 install(
-    TARGETS mpc_controller # <-- ĐÃ SỬA: Bỏ dòng bị lỗi
+    TARGETS mpc_controller 
     DESTINATION lib/${PROJECT_NAME}
 )
 
+# --- Node path_publisher ---
+add_executable(path_publisher src/path_publisher.cpp)
+ament_target_dependencies(path_publisher
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  ament_index_cpp
+)
+install(TARGETS
+  path_publisher
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 
 
@@ -105,11 +117,6 @@ install(
   DIRECTORY config launch path
   DESTINATION share/${PROJECT_NAME}/
 )
-
-
-
-
-
 
 
 if(BUILD_TESTING)
