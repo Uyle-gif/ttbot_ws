@@ -158,7 +158,7 @@
     <child link="front_left_steering_link"/>
     <origin xyz="${0.5*wheelbase} ${0.5*track_width} ${wheel_radius}" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-0.5236" upper="0.5236" effort="20" velocity="1.0"/>
+    <limit lower="-1.0472" upper="1.0472" effort="20" velocity="1.0"/>
   </joint>
 
   <joint name="front_right_steering_joint" type="revolute">
@@ -166,7 +166,7 @@
     <child link="front_right_steering_link"/>
     <origin xyz="${0.5*wheelbase} ${-0.5*track_width} ${wheel_radius}" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-0.5236" upper="0.5236" effort="20" velocity="1.0"/>
+    <limit lower="-1.0472" upper="1.0472" effort="20" velocity="1.0"/>
     <mimic joint="front_left_steering_joint" multiplier="1.0"/>
   </joint>
 

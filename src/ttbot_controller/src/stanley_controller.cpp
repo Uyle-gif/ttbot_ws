@@ -41,7 +41,7 @@ StanleyController::StanleyController()
 
   // Subscribers & Publishers
   odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/odometry/filtered", 10,
+      "/ackermann_controller/odom", 10,
       std::bind(&StanleyController::odomCallback, this, std::placeholders::_1));
 
   cmd_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/ackermann_controller/cmd_vel", 10);

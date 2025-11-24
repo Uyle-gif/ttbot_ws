@@ -7,7 +7,7 @@ def generate_launch_description():
 
     path_file_arg = DeclareLaunchArgument(
         "path_file",
-        default_value="path_u.csv",  # mặc định path u
+        default_value="path_right.csv",  # mặc định path u
         description="CSV path file to load"
     )
 

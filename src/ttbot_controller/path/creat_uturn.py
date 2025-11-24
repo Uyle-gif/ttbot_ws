@@ -1,39 +1,43 @@
+#!/usr/bin/env python3
 import numpy as np
 import csv
 
-# Tham số đường
-L1 = 5.0      # m, đoạn thẳng trước U-turn
-R = 2.0       # m, bán kính quay đầu
-ds = 0.1      # bước lấy mẫu, càng nhỏ đường càng mượt
+# ==== THAM SỐ ĐƯỜNG U-TURN ====
+L1 = 4.0      # chiều dài đoạn thẳng trước cua (m)
+R  = 3.0      # bán kính cua (m) - rất êm, phù hợp giới hạn 30 độ
+ds = 0.1      # bước lấy mẫu (m), càng nhỏ đường càng mượt
 
 xs = []
 ys = []
 
-# ---- ĐOẠN 1: đi thẳng ----
+# ==== ĐOẠN 1: ĐI THẲNG THEO TRỤC X ====
 s_vals = np.arange(0.0, L1, ds)
 for s in s_vals:
     xs.append(s)
     ys.append(0.0)
 
-# ---- ĐOẠN 2: cung tròn 180 độ ----
+# ==== ĐOẠN 2: CUNG TRÒN 180 ĐỘ ====
+# Tâm cung tròn
 xc, yc = L1, R
-theta_vals = np.arange(-np.pi/2, np.pi/2 + 0.01, np.deg2rad(2))  # mỗi 2°
+
+# Quay từ -90° đến +90° (đơn vị rad)
+theta_vals = np.arange(-np.pi/2, np.pi/2 + np.deg2rad(2), np.deg2rad(2))
 for th in theta_vals:
     x = xc + R * np.cos(th)
     y = yc + R * np.sin(th)
     xs.append(x)
     ys.append(y)
 
-# ---- ĐOẠN 3: đi thẳng sau khi quay đầu ----
-s_vals2 = np.arange(L1, -0.01, -ds)   # đi lùi về x=0
+# ==== ĐOẠN 3: ĐI THẲNG SAU KHI QUAY ĐẦU ====
+s_vals2 = np.arange(L1, -0.01, -ds)   # từ x = L1 → 0
 for s in s_vals2:
     xs.append(s)
-    ys.append(2*R)
+    ys.append(2*R)  # y = 2R = 6 m
 
-# ---- Ghi ra CSV ----
-with open("path_uturn.csv", "w", newline="") as f:
+# ==== GHI RA FILE path.csv ====
+with open("path.csv", "w", newline="") as f:
     writer = csv.writer(f)
     for x, y in zip(xs, ys):
         writer.writerow([x, y])
 
-print("Đã tạo path_uturn.csv với", len(xs), "điểm")
+print("Đã tạo path.csv với", len(xs), "điểm")
