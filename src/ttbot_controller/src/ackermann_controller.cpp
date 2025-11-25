@@ -13,7 +13,10 @@ AckermannController::AckermannController(const std::string & name)
 
     RCLCPP_INFO(get_logger(), "Using wheel_radius = %f", wheel_radius_);
     RCLCPP_INFO(get_logger(), "Using wheel_base   = %f", wheel_base_);
+  
     
+//==============================
+// PHAN NAY STM32 TRONG THUC TE SE XU LY
     // Publisher tới controller
     rear_wheel_pub_ =
         create_publisher<std_msgs::msg::Float64MultiArray>(
@@ -22,14 +25,13 @@ AckermannController::AckermannController(const std::string & name)
     steering_pub_ =
         create_publisher<std_msgs::msg::Float64MultiArray>(
             "/front_steering_position_controller/commands", 10);
-
     // Sub nhận /cmd_vel
     vel_sub_ =
         create_subscription<geometry_msgs::msg::TwistStamped>(
             "/ackermann_controller/cmd_vel", 10,
             std::bind(&AckermannController::velCallback, this, std::placeholders::_1)
         );
-
+//==============================  
 
     // Sub /joint_states để đọc encoder
     joint_sub_ =
@@ -77,6 +79,12 @@ AckermannController::AckermannController(const std::string & name)
 
 }
 
+
+// ===============================
+// Callbacks (CAI NAY TRONG THUC TE PHAN STM32 SE XU LY)
+// ===============================
+
+
 void AckermannController::velCallback(const geometry_msgs::msg::TwistStamped & msg)
 {
     double v = msg.twist.linear.x;
@@ -104,6 +112,10 @@ void AckermannController::velCallback(const geometry_msgs::msg::TwistStamped & m
     steering_pub_->publish(steer_msg);
     }
 
+
+// ===============================
+// TINH ODOMETRY (DONG HOC THUAN)
+// ===============================
 
 
 void AckermannController::jointCallback(const sensor_msgs::msg::JointState & msg)
@@ -211,6 +223,12 @@ void AckermannController::jointCallback(const sensor_msgs::msg::JointState & msg
 
     // publish odometry
     odom_pub_->publish(odom_msg_);    
+
+
+
+
+
+
     // // publish TF
     // transform_broadcaster_->sendTransform(transform_stamped_);
 

@@ -128,7 +128,7 @@ ros2 launch ttbot_controller mpc.launch.py
 ```
 ### 6. Pub path for MPC
 ```bash
-ros2 run ttbot_controller path_publisher --ros-args -p path_file:=path_u_to_S.csv
+    ros2 run ttbot_controller path_publisher --ros-args -p path_file:=path_u_to_S.csv
 ```
 
 
