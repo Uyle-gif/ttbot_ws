@@ -14,7 +14,7 @@ def generate_launch_description():
             name='adis16488_node',
             output='screen',
             parameters=[
-                {'port': '/dev/ttyUSB0'},  # Cổng kết nối
+                {'port': '/dev/ttyUSB1'},  # Cổng kết nối
                 {'baudrate': 460800},      # Baudrate (phải khớp với code C++)
                 {'frame_id': 'imu_link'}
             ]
