@@ -28,7 +28,7 @@ public:
   : Node("adis16488_driver"), serial_fd_(-1)
   {
     // 1. Khai báo tham số
-    this->declare_parameter("port", "/dev/ttyUSB1");
+    this->declare_parameter("port", "/dev/ttbot_imu");
     this->declare_parameter("baudrate", 460800);
     this->declare_parameter("frame_id", "imu_link");
 
