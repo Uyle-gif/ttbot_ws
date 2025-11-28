@@ -38,7 +38,7 @@ def generate_launch_description():
     # =========================================
     desired_speed_arg = DeclareLaunchArgument("desired_speed", default_value="1.5", description="Vận tốc xe (m/s)")
     wheel_base_arg = DeclareLaunchArgument("wheel_base", default_value="0.8", description="Chiều dài trục bánh xe")
-    max_steer_deg_arg = DeclareLaunchArgument("max_steer_deg", default_value="60.0", description="Giới hạn góc lái (độ)")
+    max_steer_deg_arg = DeclareLaunchArgument("max_steer_deg", default_value="30.0", description="Giới hạn góc lái (độ)")
 
     # Tham số Controller
     Np_arg = DeclareLaunchArgument("N_p", default_value="10", description="Prediction Horizon")

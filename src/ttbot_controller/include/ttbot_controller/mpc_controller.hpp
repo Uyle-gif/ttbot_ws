@@ -6,6 +6,8 @@
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "tf2/utils.h"
 #include <nav_msgs/msg/path.hpp>
+#include <algorithm>
+
 
 #include <vector>
 #include <utility>

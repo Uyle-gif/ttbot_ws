@@ -517,6 +517,20 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     double y   = msg->pose.pose.position.y;
     double yaw = tf2::getYaw(msg->pose.pose.orientation);
 
+    // Nếu đã tới đích rồi -> luôn giữ xe đứng yên, không giải MPC nữa
+    if (reached_goal_) {
+        geometry_msgs::msg::TwistStamped stop_cmd;
+        stop_cmd.header.stamp    = this->now();
+        stop_cmd.header.frame_id = "base_link";
+        stop_cmd.twist.linear.x  = 0.0;
+        stop_cmd.twist.angular.z = 0.0;
+        cmd_pub_->publish(stop_cmd);
+
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                             "ALREADY REACHED GOAL, KEEP STOPPING");
+        return;
+    }
+
     // 1. Reference trên path
     size_t idx = findClosestPoint(x, y);
     double rx, ry, psi_ref;
@@ -533,6 +547,9 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     // 4. Convert sang yaw_rate
     double omega = (desired_speed_ / wheel_base_) * std::tan(delta);
 
+    // 4b. RÀNG BUỘC omega: [-max_omega_, max_omega_]
+    omega = std::clamp(omega, -max_omega_, max_omega_);
+
     // 5. Publish Twist như hệ thống cũ
     geometry_msgs::msg::TwistStamped cmd;
     cmd.header.stamp    = this->now();
@@ -546,23 +563,23 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     double dx_g = x - goal.first;
     double dy_g = y - goal.second;
     double dist_to_goal = std::sqrt(dx_g*dx_g + dy_g*dy_g);
-    // Nếu đã vào vùng gần điểm cuối -> ép xe dừng
-    if (dist_to_goal < goal_tolerance_ && idx >= path_points_.size() - 2) {
+    
+     if (dist_to_goal < goal_tolerance_ && idx >= path_points_.size() - 2) {
         cmd.twist.linear.x  = 0.0;
         cmd.twist.angular.z = 0.0;
+        reached_goal_ = true;  // đánh dấu đã tới đích
         RCLCPP_INFO(this->get_logger(),
-                    "GOAL REACHED, STOP !!!!!!!1. dist=%.3f", dist_to_goal);
+                    "GOAL REACHED, STOP! dist=%.3f", dist_to_goal);
     }
 
-
-    //7. Publish command
+    // 7. Publish command
     cmd_pub_->publish(cmd);
     RCLCPP_INFO(this->get_logger(),
-    "LOG_COMPARE | x=%.3f y=%.3f yaw=%.3f | ref_x=%.3f ref_y=%.3f ref_yaw=%.3f | ey=%.3f epsi=%.3f",
-    x, y, yaw,
-    rx, ry, psi_ref,
-    ey0, epsi0);
-
+        "LOG_COMPARE | x=%.3f y=%.3f yaw=%.3f | ref_x=%.3f ref_y=%.3f ref_yaw=%.3f | ey=%.3f epsi=%.3f | omega=%.3f",
+        x, y, yaw,
+        rx, ry, psi_ref,
+        ey0, epsi0,
+        omega);
 }
 
 int main(int argc, char * argv[])
