@@ -123,6 +123,13 @@ Apply and verify
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
+### 5. IMU config
+```bash
+echo -ne '$DATOP 0000\r' > /dev/ttbot_imu
+echo -ne '$DATOP 1111\r' > /dev/ttbot_imu
+echo -ne '$BRATE 3\r' > /dev/ttbot_imu
+```
+
 
 ## ⚙️ Build Instructions (ROS2 Humble)
 
