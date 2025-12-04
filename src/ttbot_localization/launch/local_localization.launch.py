@@ -1,9 +1,10 @@
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument  # <--- Thêm cái này
-from launch.substitutions import LaunchConfiguration # <--- Thêm cái này
-from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node
 import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription # <--- Thêm IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource # <--- Thêm PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 def generate_launch_description():
     
@@ -18,7 +19,12 @@ def generate_launch_description():
     config_file = os.path.join(
         get_package_share_directory("ttbot_localization"), 
         "config", 
-        "dual_ekf.yaml"
+        "dual_ekf_ackermann.yaml"
+    )
+    gps_driver_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ttbot_localization'), 'launch', 'gps.launch.py')
+        )
     )
     # --- TF: IMU -> BASE_LINK ---
     static_transform_publisher_imu = Node(
@@ -44,25 +50,25 @@ def generate_launch_description():
         parameters=common_params 
     )
 
-    # --- NODE 1: LOCAL EKF (Odom -> Base_link) ---
+    # NODE 1: LOCAL EKF (Odom -> Base_link)
     ekf_local = Node(
         package="robot_localization",
         executable="ekf_node",
         name="ekf_filter_node_local",
         output="screen",
         parameters=[
-            os.path.join(get_package_share_directory("ttbot_localization"), "config", "ekf.yaml"),
-            common_params[0] # Merge dict use_sim_time vào
+            config_file,      # <--- Dùng biến này cho gọn, thay vì os.path.join dài dòng
+            common_params[0]
         ],
         remappings=[
-            ('/odometry/filtered', '/odometry/local') # Đổi tên output local
+            ('/odometry/filtered', '/odometry/local')
         ]
     )
     # --- NODE 2: GLOBAL EKF (Map -> Odom) ---
     ekf_global = Node(
         package="robot_localization",
         executable="ekf_node",
-        name="ekf_filter_node_global", # Tên này khớp với key thứ 2 trong dual_ekf.yaml
+        name="ekf_filter_node_global", 
         output="screen",
         parameters=[
             config_file,
@@ -111,7 +117,8 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-            
+
+        gps_driver_launch, # <--- ĐÃ THÊM: Chạy driver GPS    
         static_transform_publisher_imu,
         static_transform_publisher_gps, 
         ekf_local,       
