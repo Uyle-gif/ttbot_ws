@@ -1,0 +1,12 @@
+ublox_gps_node:
+  ros__parameters:
+    device: "/dev/ttyACM0"  # Hoặc cổng GPS của bạn
+    uart1:
+      baudrate: 115200
+    frame_id: "gps_link"    # Quan trọng: Khớp với TF tree
+    rate: 1.0
+    nav_rate: 1
+    save_on_shutdown: false
+    clear_bbackup: false
+    publish:
+      all: true
