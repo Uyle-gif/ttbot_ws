@@ -110,6 +110,13 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+add_executable(gps_path_publisher src/gps_path_publisher.cpp)
+ament_target_dependencies(gps_path_publisher rclcpp nav_msgs geometry_msgs sensor_msgs)
+
+install(TARGETS
+  gps_path_publisher   
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 
 # install config + launch + path files

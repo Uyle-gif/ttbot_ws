@@ -127,6 +127,24 @@
     </sensor>
   </gazebo>
 
+
+  <gazebo reference="gps_link">
+    <sensor name="gps_sensor" type="navsat">
+      <always_on>1</always_on>
+      <update_rate>10</update_rate>
+      <topic>gps/fix</topic>
+      <ignition_frame_id>gps_link</ignition_frame_id>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+      <plugin filename="ignition-gazebo-navsat-system"
+              name="ignition::gazebo::systems::NavSat">
+      </plugin>
+  </gazebo>
+
+
+
   </xacro:macro>
 
 </robot>

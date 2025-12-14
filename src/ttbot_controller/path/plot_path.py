@@ -8,7 +8,7 @@ import numpy as np
 if len(sys.argv) > 1:
     path_file = sys.argv[1]
 else:
-    path_file = "path_s_shape.csv"
+    path_file = "gps_path.csv"
 
 xs_list = []
 ys_list = []
