@@ -146,18 +146,14 @@ cd ~/Desktop/ttbot_ws
 colcon build 
 source install/setup.bash
 ```
-### 3. Run the full system
+### 3. Run the full system (no path, no rviz, and run mpc ) or full option
 ```bash
-ros2 launch ttbot_bringup ttbot_full_system.launch.py
+ros2 launch ttbot_bringup sim.launch.py
 ```
-### 4. Run Stanley_controller
 ```bash
-ros2 launch ttbot_controller stanley.launch.py
+ros2 launch ttbot_bringup sim.launch.py run_path:=true run_rviz:=true controller_type:=stanley
 ```
-### 5. Run mpc_controller
-```bash
-ros2 launch ttbot_controller mpc.launch.py
-```
+
 ### 6. Pub path for MPC
 ```bash
     ros2 run ttbot_controller path_publisher --ros-args -p path_file:=path_u_to_S.csv
