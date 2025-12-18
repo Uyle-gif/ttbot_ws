@@ -9,6 +9,7 @@ from pymavlink import mavutil
 from nav_msgs.msg import Path, Odometry
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import NavSatFix, Imu # [NEW] Thêm Imu msg
 from std_msgs.msg import Float32MultiArray, Bool
 import math
 import time
@@ -22,7 +23,7 @@ class QGCBridge(Node):
         self.sys_id = 1
         self.comp_id = 1
         self.connection_string = 'udpout:localhost:14550' 
-        
+        self.heading_offset_rad = math.pi / -2  # <--- CHỈNH GÓC Ở ĐÂY
         # Dialect ardupilotmega để hỗ trợ đầy đủ các lệnh của ArduRover
         self.mav = mavutil.mavlink_connection(self.connection_string, source_system=self.sys_id, source_component=self.comp_id, dialect='ardupilotmega')
         
@@ -32,19 +33,26 @@ class QGCBridge(Node):
         self.get_logger().info(f"--- BRIDGE ULTIMATE FIXED (SYSID={self.sys_id}) ---")
 
         # --- ROS 2 PUBLISHERS ---
-        self.path_pub = self.create_publisher(Path, '/mpc_global_path', 10)
+        self.path_pub = self.create_publisher(Path, '/mpc_path', 10)
         self.params_pub = self.create_publisher(Float32MultiArray, '/tuning/pid_params', 10)
         self.arm_pub = self.create_publisher(Bool, '/system/armed', 10)
 
         # --- ROS 2 SUBSCRIBERS ---
-        self.create_subscription(NavSatFix, '/fix', self.gps_callback, 10)
+        self.create_subscription(NavSatFix, '/gps/fix', self.gps_callback, 10)
         self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        self.create_subscription(Imu, '/imu/data_filtered', self.imu_callback, 10)
 
         # Biến quản lý
         self.mission_count = 0
         self.current_wp_seq = 0
         self.is_armed = False 
         self.last_odom_time = 0.0
+
+        # [NEW] Biến lưu góc quay hiện tại (Radian)
+        self.roll = 0.0
+        self.pitch = 0.0
+        self.yaw = 0.0
+        self.has_orientation = False # Cờ đánh dấu đã có dữ liệu hướng
 
         # Kho tham số giả lập
         self.param_dict = {
@@ -116,6 +124,33 @@ class QGCBridge(Node):
             0,                           # uid
             bytes([0]*18)                # uid2 (18 bytes) - Chỉ có ở MAVLink 2
         )
+    # [FIX HƯỚNG] IMU Callback có áp dụng Offset
+    def imu_callback(self, msg):
+        q = msg.orientation
+        sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
+        cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
+        self.roll = math.atan2(sinr_cosp, cosr_cosp)
+
+        sinp = 2 * (q.w * q.y - q.z * q.x)
+        self.pitch = math.copysign(math.pi / 2, sinp) if abs(sinp) >= 1 else math.asin(sinp)
+
+        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+        raw_yaw = math.atan2(siny_cosp, cosy_cosp)
+
+        # Áp dụng Offset tại đây
+        self.yaw = raw_yaw + self.heading_offset_rad
+        
+        # Chuẩn hóa về -pi đến pi
+        if self.yaw > math.pi: self.yaw -= 2*math.pi
+        elif self.yaw < -math.pi: self.yaw += 2*math.pi
+        
+        self.has_orientation = True
+
+        self.mav.mav.attitude_send(
+            self.get_boot_time(), self.roll, self.pitch, self.yaw,
+            msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z
+        )
 
     def gps_callback(self, msg):
         if self.origin_lat is None and msg.status.status >= 0:
@@ -149,12 +184,22 @@ class QGCBridge(Node):
         current_lat = self.origin_lat + math.degrees(dLat)
         current_lon = self.origin_lon + math.degrees(dLon)
         
-        q = msg.pose.pose.orientation
-        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
-        yaw = math.atan2(siny_cosp, cosy_cosp)
-        heading_deg = math.degrees(yaw)
-        if heading_deg < 0: heading_deg += 360
+        # [UPDATE] Tính heading. Ưu tiên dùng IMU nếu có, nếu không thì dùng Odom
+        heading_cdeg = 0
+        if self.has_orientation:
+            # Dùng Yaw từ IMU (Chính xác hơn)
+            deg = math.degrees(self.yaw)
+            if deg < 0: deg += 360
+            heading_cdeg = int(deg * 100)
+        else:
+            # Fallback: Tính từ Odom Quaternion nếu chưa có IMU
+            q = msg.pose.pose.orientation
+            siny_cosp = 2 * (q.w * q.z + q.x * q.y)
+            cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+            yaw_odom = math.atan2(siny_cosp, cosy_cosp)
+            deg = math.degrees(yaw_odom)
+            if deg < 0: deg += 360
+            heading_cdeg = int(deg * 100)
 
         self.mav.mav.global_position_int_send(
             self.get_boot_time(),
@@ -162,9 +207,12 @@ class QGCBridge(Node):
             int(10 * 1000), int(10 * 1000),
             int(msg.twist.twist.linear.x * 100),
             int(msg.twist.twist.linear.y * 100),
-            0, int(heading_deg * 100)
+            0, heading_cdeg
         )
-        self.mav.mav.attitude_send(self.get_boot_time(), 0, 0, yaw, 0, 0, 0)
+        # Lưu ý: Không gửi attitude_send ở đây nữa vì imu_callback đã lo rồi
+
+
+
 
     def read_mavlink_loop(self):
         while True:
