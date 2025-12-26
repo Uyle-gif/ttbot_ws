@@ -34,6 +34,16 @@ Apply and verify
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
+``` bash
+sudo apt update
+sudo apt install ros-humble-nmea-navsat-driver -y
+sudo apt install ros-humble-ublox-serialization -y
+
+sudo apt install python3-pip -y
+pip3 install transforms3d pyserial
+pip3 install "numpy==1.23.5"
+```
+
 ### 5. IMU config
 ```bash
 stty -F /dev/ttbot_imu 460800 cs8 -cstopb -parenb -echo
@@ -188,5 +198,5 @@ ros2 run tf2_ros tf2_echo map base_link
 
 
 
+
 nano ~/.bashrc
-source ~/microros_ws/install/setup.bash
