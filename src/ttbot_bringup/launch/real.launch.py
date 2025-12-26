@@ -89,7 +89,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_gps_driver, 'launch', 'gps.launch.py')),
         launch_arguments={
             'port': gps_port,   
-            'baud': '38400',    
+            'baud': '19200',    
             'frame_id': 'gps_link'
         }.items()
     )

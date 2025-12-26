@@ -13,7 +13,7 @@ def generate_launch_description():
     
     arg_baud = DeclareLaunchArgument(
         'baud', 
-        default_value='38400', 
+        default_value='19200', 
         description='Baudrate for GPS'
     )
     
