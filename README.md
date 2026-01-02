@@ -44,10 +44,10 @@ pip3 install transforms3d pyserial
 pip3 install "numpy==1.23.5"
 ```
 
-### 5. IMU config
+### 5. IMU config (1 on 2 on)
 ```bash
 stty -F /dev/ttbot_imu 460800 cs8 -cstopb -parenb -echo
-echo -e '$DATOP 0000\r' > /dev/ttbot_imu
+  echo -e '$DATOP 0000\r' > /dev/ttbot_imu
 echo -e '$DATOP 1111\r' > /dev/ttbot_imu
 echo -e '$BRATE 3\r' > /dev/ttbot_imu
 ```

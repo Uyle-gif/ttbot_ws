@@ -71,10 +71,20 @@ private:
 
     void generateFigure8Path()
     {
-        for (int i = 0; i < 200; ++i) {
-            double t = 2.0 * M_PI * i / 200.0;
-            double x = 4.0 * std::sin(t);       
-            double y = 2.0 * std::sin(2.0 * t); 
+        // Tăng độ phân giải điểm lên một chút (ví dụ 400) để đường cong mượt hơn khi hình to ra
+        int total_points = 500; 
+        
+        // Kích thước mong muốn (bạn chỉnh ở đây)
+        double scale_x = 8.0; // Cũ là 4.0 -> Tăng lên 8.0 (chiều ngang)
+        double scale_y = 4.0; // Cũ là 2.0 -> Tăng lên 4.0 (chiều dọc)
+
+        for (int i = 0; i < total_points; ++i) {
+            double t = 2.0 * M_PI * i / (double)total_points;
+            
+            // Công thức tham số: x = A*sin(t), y = B*sin(2t)
+            double x = scale_x * std::sin(t);       
+            double y = scale_y * std::sin(2.0 * t); 
+            
             addPointToPath(x, y);
         }
     }
