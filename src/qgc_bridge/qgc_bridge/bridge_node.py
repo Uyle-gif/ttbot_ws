@@ -23,11 +23,14 @@ class QGCBridge(Node):
 
         self.sys_id = 1
         self.comp_id = 1
-        self.connection_string = 'udpout:localhost:14550' 
-        self.heading_offset_rad = 0
+        #self.connection_string = 'udpout:localhost:14550' 
+        self.connection_string = '/dev/ttyUSB0'
+        self.baud_rate = 57600
+        self.heading_offset_rad = math.pi / -2
         
         self.mav = mavutil.mavlink_connection(
             self.connection_string, 
+            baud=self.baud_rate,
             source_system=self.sys_id, 
             source_component=self.comp_id, 
             dialect='ardupilotmega'
@@ -84,7 +87,7 @@ class QGCBridge(Node):
         # --- Timers ---
         # Cũng phải thêm callback_group vào Timer
         self.create_timer(1.0, self.send_heartbeat, callback_group=self.cb_group)
-        self.create_timer(0.01, self.read_mavlink_loop, callback_group=self.cb_group)
+        self.create_timer(0.05, self.read_mavlink_loop, callback_group=self.cb_group)
         self.create_timer(1.0, self.send_sys_status, callback_group=self.cb_group)
         self.create_timer(2.0, self.send_autopilot_version, callback_group=self.cb_group)
         
@@ -147,7 +150,7 @@ class QGCBridge(Node):
 
     def imu_callback(self, msg):
         self.imu_process_counter += 1
-        if self.imu_process_counter % 5 != 0:
+        if self.imu_process_counter % 10 != 0:
             return
 
         q = msg.orientation
@@ -194,7 +197,11 @@ class QGCBridge(Node):
 
     def odom_callback(self, msg):
         if self.origin_lat is None: return
-        self.last_odom_time = time.time()
+        now = time.time()
+        if now - self.last_odom_time < 0.2: # 0.2s = 5Hz
+            return
+        
+        self.last_odom_time = now
 
         x = msg.pose.pose.position.x
         y = msg.pose.pose.position.y
