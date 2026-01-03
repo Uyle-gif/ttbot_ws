@@ -1,6 +1,6 @@
 #ifndef TTBOT_CONTROLLER_STANLEY_CONTROLLER_HPP_
 #define TTBOT_CONTROLLER_STANLEY_CONTROLLER_HPP_
-
+#include "std_msgs/msg/float32.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
@@ -41,6 +41,9 @@ private:
     size_t current_index_;
     bool has_path_ = false;
 
+
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_cte_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_heading_pub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;

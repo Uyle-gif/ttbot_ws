@@ -39,6 +39,10 @@ StanleyController::StanleyController()
     cmd_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(
         "/ackermann_controller/cmd_vel", 10);
 
+    error_cte_pub_ = this->create_publisher<std_msgs::msg::Float32>("/stanley/error/cte", 10);
+    error_heading_pub_ = this->create_publisher<std_msgs::msg::Float32>("/stanley/error/heading", 10);
+
+        
     RCLCPP_INFO(this->get_logger(), 
         "Stanley RESTORED: MaxSteer=%.1f deg, Speed=%.2f m/s, K=%.2f", max_steer_deg, desired_speed_, k_gain_);
 }
@@ -127,6 +131,18 @@ double StanleyController::computeSteering(double front_x, double front_y, double
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
         "Stanley Log | idx: %zu | CTE: %.3f | Theta_e: %.2f | Raw: %.1f deg -> Limit: %.1f",
         idx, error_front_axle, theta_e, rad2deg(delta_raw), rad2deg(delta_clamped));
+
+
+    // Publish Cross-track Error
+    std_msgs::msg::Float32 cte_msg;
+    cte_msg.data = error_front_axle; // Biến e_fa
+    error_cte_pub_->publish(cte_msg);
+
+    // Publish Heading Error (đổi ra độ cho dễ nhìn)
+    std_msgs::msg::Float32 head_msg;
+    head_msg.data = rad2deg(theta_e);
+    error_heading_pub_->publish(head_msg);
+
 
     return delta_clamped;
 }

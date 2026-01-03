@@ -133,7 +133,7 @@ def generate_launch_description():
         condition=IfCondition(run_path),
         actions=[
             TimerAction(
-                period=6.0,
+                period=20.0,
                 actions=[
                     IncludeLaunchDescription(
                         PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'path_publisher.launch.py')),

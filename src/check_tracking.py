@@ -9,94 +9,77 @@ import numpy as np
 class PathTrackingEval(Node):
     def __init__(self):
         super().__init__('path_tracking_eval')
-        
-        # 1. Lấy dữ liệu VỊ TRÍ THỰC (Actual Trajectory)
-        # Sử dụng Odom đã lọc để có vị trí mượt nhất
-        self.sub_odom = self.create_subscription(
-            Odometry,
-            '/odometry/filtered', 
-            self.odom_callback,
-            10)
-
-        # 2. Lấy dữ liệu QUỸ ĐẠO MONG MUỐN (Planned Path)
-        # Topic này chứa danh sách các điểm mà MPC tính toán
-        self.sub_path = self.create_subscription(
-            Path,
-            '/mpc_path',
-            self.path_callback,
-            10)
-
-        # Dữ liệu lưu trữ
-        self.robot_x = [] # Lưu lịch sử đi của robot
-        self.robot_y = []
-        
-        self.path_x = []  # Lưu đường MPC hiện tại
-        self.path_y = []
+        self.sub_odom = self.create_subscription(Odometry, '/odometry/filtered', self.odom_callback, 10)
+        self.sub_path = self.create_subscription(Path, '/mpc_path', self.path_callback, 10)
+        self.robot_x, self.robot_y = [], []
+        self.path_x, self.path_y = [], []
 
     def odom_callback(self, msg):
-        # Lưu lại vết xe đi
         self.robot_x.append(msg.pose.pose.position.x)
         self.robot_y.append(msg.pose.pose.position.y)
 
     def path_callback(self, msg):
-        # MPC Path là một danh sách các điểm (Poses)
-        # Chúng ta cần tách nó ra để vẽ
-        temp_x = []
-        temp_y = []
-        for pose_stamped in msg.poses:
-            temp_x.append(pose_stamped.pose.position.x)
-            temp_y.append(pose_stamped.pose.position.y)
-        
-        # Cập nhật đường dẫn mới nhất từ thuật toán
-        self.path_x = temp_x
-        self.path_y = temp_y
+        self.path_x = [p.pose.position.x for p in msg.poses]
+        self.path_y = [p.pose.position.y for p in msg.poses]
 
-def update_plot(frame, node, line_robot, line_path, title_text):
-    # Vẽ lịch sử đường đi của robot (Nét liền đỏ)
+def update_plot(frame, node, line_robot, line_path, title_text, ax):
+    # 1. Cập nhật dữ liệu
     line_robot.set_data(node.robot_x, node.robot_y)
-    
-    # Vẽ đường MPC mong muốn (Nét đứt xanh lá)
-    # Vì MPC cập nhật liên tục, đường này sẽ thay đổi theo thời gian thực
     line_path.set_data(node.path_x, node.path_y)
     
-    # Tự động căn chỉnh khung hình
-    if node.robot_x and node.path_x:
+    # 2. Tự động tính toán khung hình vuông vức (Bounding Box)
+    if node.path_x:
+        # Lấy biên của cả robot và path
         all_x = node.robot_x + node.path_x
         all_y = node.robot_y + node.path_y
-        plt.xlim(min(all_x)-1, max(all_x)+1)
-        plt.ylim(min(all_y)-1, max(all_y)+1)
         
-        # Tính khoảng cách đơn giản giữa đầu xe và điểm đầu của Path (Manhattan distance cho nhanh)
-        # Để ước lượng độ lệch
-        if len(node.path_x) > 0:
-            dx = node.robot_x[-1] - node.path_x[0]
-            dy = node.robot_y[-1] - node.path_y[0]
-            err = np.sqrt(dx**2 + dy**2)
-            title_text.set_text(f"Tracking Eval - Sai số dẫn đường: {err:.3f} m")
+        if all_x and all_y:
+            min_x, max_x = min(all_x), max(all_x)
+            min_y, max_y = min(all_y), max(all_y)
+            
+            # Tìm tâm của hình
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            
+            # Tìm cạnh lớn nhất để tạo hình vuông
+            span = max(max_x - min_x, max_y - min_y)
+            padding = 1.5 # Thêm lề 1.5m cho thoáng
+            half_size = (span / 2) + padding
+            
+            # Set giới hạn mới
+            ax.set_xlim(center_x - half_size, center_x + half_size)
+            ax.set_ylim(center_y - half_size, center_y + half_size)
+            
+            # Tính sai số hiển thị
+            if len(node.path_x) > 0 and len(node.robot_x) > 0:
+                robot_pos = np.array([node.robot_x[-1], node.robot_y[-1]])
+                path_arr = np.column_stack((node.path_x, node.path_y))
+                dists = np.linalg.norm(path_arr - robot_pos, axis=1)
+                err = np.min(dists)
+                title_text.set_text(f"Tracking Eval - Sai số bám (CTE): {err:.3f} m")
 
     return line_robot, line_path, title_text
 
 def main():
     rclpy.init()
     node = PathTrackingEval()
-    
-    thread = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
-    thread.start()
+    threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
 
     fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # QUAN TRỌNG: Dùng adjustable='box' để không bị cắt hình
+    ax.set_aspect('equal', adjustable='box') 
+    
     ax.set_xlabel("X (m)")
     ax.set_ylabel("Y (m)")
-    ax.grid(True)
-    ax.axis('equal')
+    ax.grid(True, linestyle=':')
 
-    # Setup 2 đường
-    line_path, = ax.plot([], [], 'g--', linewidth=2, label='MPC Planned Path (Tham chiếu)')
-    line_robot, = ax.plot([], [], 'r-', linewidth=2, label='Robot Actual Trace (Thực tế)')
-    
-    title_text = ax.set_title("Đang chờ dữ liệu MPC...")
-    ax.legend()
+    line_path, = ax.plot([], [], 'g--', linewidth=2, label='Quỹ đạo đặt (Ref)')
+    line_robot, = ax.plot([], [], 'r-', linewidth=2, label='Thực tế (Actual)')
+    title_text = ax.set_title("Đang chờ dữ liệu...")
+    ax.legend(loc='upper right')
 
-    ani = FuncAnimation(fig, update_plot, fargs=(node, line_robot, line_path, title_text), interval=100)
+    ani = FuncAnimation(fig, update_plot, fargs=(node, line_robot, line_path, title_text, ax), interval=100)
     plt.show()
 
     node.destroy_node()
