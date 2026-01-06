@@ -5,6 +5,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "std_msgs/msg/float32.hpp" // <--- [MỚI] Thêm thư viện này
 #include "tf2/utils.h"
 
 #include <vector>
@@ -89,8 +90,12 @@ private:
 
     // ==== ROS ====
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr cmd_pub_;
+
+    // [MỚI] Thêm 2 Publisher để vẽ đồ thị đánh giá
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_cte_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_heading_pub_;
 };
 
 #endif // TTBOT_CONTROLLER_MPC_CONTROLLER_HPP_

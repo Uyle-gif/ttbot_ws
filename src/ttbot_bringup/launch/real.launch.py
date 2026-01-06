@@ -30,8 +30,8 @@ def generate_launch_description():
         period=16.0, 
         actions=[
             Node(
-                package='qgc_bridge_cpp',      # Đã sửa tên gói
-                executable='qgc_bridge_node',  # Đã sửa tên file chạy
+                package='qgc_bridge_cpp',      
+                executable='qgc_bridge_node',  
                 name='qgc_bridge_node',
                 output='screen',
                 condition=IfCondition(run_qgc),
@@ -44,7 +44,6 @@ def generate_launch_description():
             )
         ]
     )
-
 
     imu_port = LaunchConfiguration('imu_port')
     arg_imu = DeclareLaunchArgument('imu_port', default_value='/dev/ttbot_imu')
@@ -72,10 +71,6 @@ def generate_launch_description():
     
     path_file = LaunchConfiguration('path_file')
     arg_path = DeclareLaunchArgument('path_file', default_value='path_l.csv')
-
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    arg_sim_time = DeclareLaunchArgument('use_sim_time', default_value='false')
-
    
     #  HARDWARE & DRIVERS LAYER
 
@@ -102,16 +97,6 @@ def generate_launch_description():
             'frame_id': 'gps_link'
         }.items()
     )
-
-    micro_ros_agent = Node(
-        package='micro_ros_agent',
-        executable='micro_ros_agent',
-        name='micro_ros_agent',
-        arguments=['serial', '--dev', '/dev/ttyUSB0', '-b', '115200'],
-        output='screen'
-    )
-
-
 
     ackermann_node = Node(
         package='ttbot_controller',
@@ -188,7 +173,6 @@ def generate_launch_description():
         robot_state_publisher,
         imu_launch,
         gps_launch,
-      # micro_ros_agent,
         ackermann_node,
         qgc_bridge_node,
         joy_launch,

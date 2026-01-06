@@ -20,16 +20,25 @@ def generate_launch_description():
 
     # 3. MPC & Vehicle Params
     desired_speed_arg = DeclareLaunchArgument("desired_speed", default_value="1.5")
-    wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.8")
+    wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.65")
     max_steer_deg_arg = DeclareLaunchArgument("max_steer_deg", default_value="30.0")
     goal_tol_arg      = DeclareLaunchArgument("goal_tolerance", default_value="0.3")
 
-    # 4. MPC Weights & Horizon
-    Np_arg      = DeclareLaunchArgument("N_p", default_value="30", description="Prediction Horizon")
-    dt_mpc_arg  = DeclareLaunchArgument("dt_mpc", default_value="0.1", description="Time step")
-    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="8.0", description="Lateral error weight")
-    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="5.0", description="Heading error weight")
-    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="200.0", description="Steer effort weight")
+    # 4. MPC Weights & Horizon - ĐÃ TUNE LẠI
+    # Tăng tầm nhìn lên 30 bước (3 giây) để đường đi mượt hơn, giảm lắc
+    dt_mpc_arg  = DeclareLaunchArgument("dt_mpc", default_value="0.05")
+    Np_arg      = DeclareLaunchArgument("N_p", default_value="40")
+
+    # 3. Weights Tuning
+    # Giảm bớt Q_ey vì đã sửa wheelbase, xe sẽ tự bám tốt hơn
+    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="30.0")   
+    
+    # TĂNG Q_epsi: Ép đầu xe phải chuẩn hướng tại điểm giao nhau
+    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="30.0")
+    
+    # Giữ R_delta ở mức "vừa phải" để tránh dao động
+    # Vì dt giảm xuống 0.05, nên R_delta cần giảm nhẹ để tương thích
+    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="3.0")
 
     # 5. Node Definition
     mpc_node = Node(

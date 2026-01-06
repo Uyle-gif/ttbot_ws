@@ -56,7 +56,7 @@ def update_plot(frame, node, line_robot, line_path, title_text, ax):
                 path_arr = np.column_stack((node.path_x, node.path_y))
                 dists = np.linalg.norm(path_arr - robot_pos, axis=1)
                 err = np.min(dists)
-                title_text.set_text(f"Tracking Eval - Sai số bám (CTE): {err:.3f} m")
+                title_text.set_text(f"Tracking")
 
     return line_robot, line_path, title_text
 
