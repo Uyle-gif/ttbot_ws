@@ -8,7 +8,7 @@ navsat_transform_node:
     broadcast_cartesian_transform: false
     publish_filtered_gps: true
     use_odometry_yaw: false  
-    delay: 2.0
+    delay: 0.0
 
 ekf_global_node:
   ros__parameters:

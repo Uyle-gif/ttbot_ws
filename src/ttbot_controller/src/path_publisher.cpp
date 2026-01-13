@@ -19,34 +19,35 @@ public:
             std::chrono::seconds(1),
             std::bind(&PathPublisher::timerCallback, this));
 
-        RCLCPP_INFO(this->get_logger(), "--> Path Publisher: FIGURE-8 (Infinity Shape)");
+        // Cập nhật Log báo hiệu là hình tròn
+        RCLCPP_INFO(this->get_logger(), "--> Path Publisher: BIG CIRCLE (R=10m)");
     }
 
 private:
     void timerCallback()
     {
-        // GỌI HÀM TẠO SỐ 8
-        nav_msgs::msg::Path path_msg = generateFigure8Path();
+        // GỌI HÀM TẠO HÌNH TRÒN
+        nav_msgs::msg::Path path_msg = generateCirclePath();
         path_pub_->publish(path_msg);
     }
 
-    nav_msgs::msg::Path generateFigure8Path()
+    nav_msgs::msg::Path generateCirclePath()
     {
         nav_msgs::msg::Path path;
         path.header.stamp = this->now();
         path.header.frame_id = "odom"; 
 
-        int total_points = 1200; // Tăng số điểm lên để đường cong mượt hơn ở chỗ cua gắt
-        double scale = 5.0;      // Kích thước của số 8 (Rộng ~10m)
+        int total_points = 1200; // Số lượng điểm
+        double radius = 10.0;    // Bán kính to (10m -> Đường kính 20m)
 
         for (int i = 0; i < total_points; ++i) {
             double t = 2.0 * M_PI * i / (double)total_points;
 
-            // --- CÔNG THỨC HÌNH SỐ 8 (Lemniscate of Gerono dạng đơn giản) ---
-            // x chạy qua lại như con lắc (cos)
-            // y chạy nhanh gấp đôi (sin 2t) để tạo nút thắt
-            double x = scale * std::cos(t);
-            double y = scale * std::sin(2.0 * t) / 2.0; 
+            // --- CÔNG THỨC HÌNH TRÒN ---
+            // x = R * cos(t)
+            // y = R * sin(t)
+            double x = radius * std::cos(t);
+            double y = radius * std::sin(t); 
 
             geometry_msgs::msg::PoseStamped pose;
             pose.header = path.header;
@@ -54,7 +55,10 @@ private:
             pose.pose.position.y = y;
             pose.pose.position.z = 0.0;
 
-            // Quaternion mặc định
+            // Tính toán Orientation (Heading) cho từng điểm
+            // Để robot biết hướng mũi tên tiếp tuyến với đường tròn (tuỳ chọn, nhưng tốt cho MPC)
+            // Nếu chỉ cần path hiển thị thì w=1.0 là đủ.
+            // Ở đây tôi giữ w=1.0 như code cũ của bạn.
             pose.pose.orientation.w = 1.0;
 
             path.poses.push_back(pose);

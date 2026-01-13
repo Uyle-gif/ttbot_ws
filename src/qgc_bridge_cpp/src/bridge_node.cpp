@@ -38,7 +38,7 @@ public:
     QGCBridgeNode() : Node("qgc_bridge_node")
     {
         // [THÊM MỚI] --- ĐỌC THAM SỐ OFFSET TỪ LAUNCH FILE ---
-        this->declare_parameter("heading_offset_deg", 90.0); // Mặc định 90 độ (cho Gazebo)
+        this->declare_parameter("heading_offset_deg", 0.0); // Mặc định  
         double offset_deg = this->get_parameter("heading_offset_deg").as_double();
         heading_offset_rad_ = offset_deg * M_PI / 180.0;     // Đổi sang Radian
 
@@ -47,7 +47,7 @@ public:
         // ----------------------------------------------------
 
         // 1. Khởi tạo UDP Socket
-        setup_udp_socket(14550);
+        setup_udp_socket(14551);
         boot_time_start_ = std::chrono::steady_clock::now();
 
         // 2. Khởi tạo Parameter (Giống Python)
@@ -97,6 +97,11 @@ public:
     }
 
 private:
+    //  [THÊM MỚI ĐOẠN NÀY] -------------------------
+    uint8_t target_sys_id_ = 0;       // Lưu ID của QGC
+    uint8_t target_comp_id_ = 0;      // Lưu Component của QGC
+    uint8_t current_mission_type_ = 0; // Lưu loại nhiệm vụ (Mission/Rally)
+    // ---------------------------------------------    
     // --- Variables ---
     int sys_id_ = 1;
     int comp_id_ = 1;
@@ -342,7 +347,7 @@ private:
             0, 0, 0,        // Vận tốc (vx, vy, vz) - Có thể lấy từ Odom nếu cần chính xác
             heading_cdeg);  // Hướng mũi xe
         send_mavlink_message(&msg_pos);
-
+        
         // --- PHẦN 5: GỬI GPS_RAW_INT (Trạng thái vệ tinh) ---
         // Đây là gói tin quyết định QGC báo "No GPS Lock" hay "3D Lock"
         mavlink_message_t msg_raw;
@@ -537,11 +542,27 @@ private:
     void handle_mission_count(const mavlink_message_t& msg) {
         mavlink_mission_count_t mcount;
         mavlink_msg_mission_count_decode(&msg, &mcount);
+
+        // --- [SỬA ĐỔI BẮT ĐẦU] ---
+        // 1. Lưu lại ai là người gửi (QGC) để tí nữa gửi trả lời cho đúng người
+        target_sys_id_ = msg.sysid;
+        target_comp_id_ = msg.compid;
+        
+        // 2. Lưu lại loại nhiệm vụ (Mission, Fence, hay Rally?)
+        current_mission_type_ = mcount.mission_type; 
+        // -------------------------
+
         mission_count_ = mcount.count;
         current_wp_seq_ = 0;
         
-        current_path_ = nav_msgs::msg::Path();
-        current_path_.header.frame_id = "map";
+        // --- [SỬA ĐỔI BẮT ĐẦU] ---
+        // 3. Chỉ xóa đường dẫn cũ nếu đây là nhiệm vụ bay (Mission)
+        // Nếu QGC chỉ gửi Rally Point (Điểm an toàn), ta không nên xóa đường đi chính
+        if (current_mission_type_ == MAV_MISSION_TYPE_MISSION) {
+            current_path_ = nav_msgs::msg::Path();
+            current_path_.header.frame_id = "map";
+        }
+        // -------------------------
 
         // Request WP 0
         send_mission_request(0);
@@ -552,60 +573,86 @@ private:
         mavlink_msg_mission_item_int_decode(&msg, &item);
 
         if (item.seq == current_wp_seq_) {
-            if (item.command == MAV_CMD_NAV_WAYPOINT && home_set_) {
-                // Chuyển GPS -> Local XY
-                double wp_lat = item.x / 1e7;
-                double wp_lon = item.y / 1e7;
-                
-                double lat0_rad = origin_lat_ * M_PI / 180.0;
-                double dLat = (wp_lat - origin_lat_) * M_PI / 180.0;
-                double dLon = (wp_lon - origin_lon_) * M_PI / 180.0;
+            
+            // --- [SỬA ĐỔI BẮT ĐẦU] ---
+            // Thêm điều kiện: Chỉ xử lý tọa độ nếu là MISSION_TYPE_MISSION
+            if (current_mission_type_ == MAV_MISSION_TYPE_MISSION) {
+                if (item.command == MAV_CMD_NAV_WAYPOINT && home_set_) {
+                    // Chuyển GPS -> Local XY
+                    double wp_lat = item.x / 1e7;
+                    double wp_lon = item.y / 1e7;
+                    
+                    double lat0_rad = origin_lat_ * M_PI / 180.0;
+                    double dLat = (wp_lat - origin_lat_) * M_PI / 180.0;
+                    double dLon = (wp_lon - origin_lon_) * M_PI / 180.0;
 
-                double x = dLon * EARTH_RADIUS * std::cos(lat0_rad);
-                double y = dLat * EARTH_RADIUS;
+                    double x = dLon * EARTH_RADIUS * std::cos(lat0_rad);
+                    double y = dLat * EARTH_RADIUS;
 
-                geometry_msgs::msg::PoseStamped pose;
-                pose.header.frame_id = "map";
-                pose.pose.position.x = x;
-                pose.pose.position.y = y;
-                current_path_.poses.push_back(pose);
+                    geometry_msgs::msg::PoseStamped pose;
+                    pose.header.frame_id = "map";
+                    pose.pose.position.x = x;
+                    pose.pose.position.y = y;
+                    current_path_.poses.push_back(pose);
+                }
             }
+            // -------------------------
 
             current_wp_seq_++;
             if (current_wp_seq_ < mission_count_) {
                 send_mission_request(current_wp_seq_);
             } else {
                 send_mission_ack();
-                current_path_.header.stamp = this->now();
                 
-                // [SỬA ĐỔI] Chỉ gửi path nếu xe ĐANG ARMED
-                if (is_armed_) {
-                    path_pub_->publish(current_path_);
-                    RCLCPP_INFO(this->get_logger(), "Mission Updated (ARMED). Sending to controller.");
+                // --- [SỬA ĐỔI BẮT ĐẦU] ---
+                // Chỉ publish path nếu là Mission Type
+                if (current_mission_type_ == MAV_MISSION_TYPE_MISSION) {
+                    current_path_.header.stamp = this->now();
+                    
+                    if (is_armed_) {
+                        path_pub_->publish(current_path_);
+                        RCLCPP_INFO(this->get_logger(), "Mission Updated (ARMED). Sending to controller.");
+                    } else {
+                        RCLCPP_INFO(this->get_logger(), "Mission Stored (%d points). Waiting for ARM command...", (int)current_path_.poses.size());
+                    }
                 } else {
-                    RCLCPP_INFO(this->get_logger(), "Mission Stored (%d points). Waiting for ARM command...", (int)current_path_.poses.size());
+                    RCLCPP_INFO(this->get_logger(), "Received Non-Mission data (Type: %d). Acknowledged but ignored.", current_mission_type_);
                 }
+                // -------------------------
             }
         }
     }
 
     void send_mission_request(int seq) {
         mavlink_message_t msg;
-        // SỬA LỖI: Thêm MAV_MISSION_TYPE_MISSION (0) vào cuối hàm
+        
+        // --- [SỬA ĐỔI BẮT ĐẦU] ---
+        // Thay tham số thứ 4, 5 bằng target_sys_id_, target_comp_id_
+        // Thay tham số cuối cùng bằng current_mission_type_
         mavlink_msg_mission_request_int_pack(sys_id_, comp_id_, &msg, 
-                                             sys_id_, comp_id_, 
+                                             target_sys_id_,   // <--- Gửi đến QGC
+                                             target_comp_id_,  // <--- Gửi đến QGC
                                              seq, 
-                                             MAV_MISSION_TYPE_MISSION); // <--- Thêm tham số này
+                                             current_mission_type_); // <--- Đúng loại type (Mission/Rally)
+        // -------------------------
+        
         send_mavlink_message(&msg);
     }
 
     void send_mission_ack() {
         mavlink_message_t msg;
-        // Sửa lỗi: Thêm MAV_MISSION_TYPE_MISSION (0) và opaque_id (0) vào cuối hàm
+        
+        // --- [SỬA ĐỔI BẮT ĐẦU] ---
+        // Thay tham số thứ 4, 5 bằng target_sys_id_, target_comp_id_
+        // Thay tham số mission_type bằng current_mission_type_
         mavlink_msg_mission_ack_pack(sys_id_, comp_id_, &msg, 
-                                     sys_id_, comp_id_, 
+                                     target_sys_id_,    // <--- Gửi trả cho QGC (QUAN TRỌNG)
+                                     target_comp_id_,   // <--- Gửi trả cho QGC
                                      MAV_MISSION_ACCEPTED, 
-                                     MAV_MISSION_TYPE_MISSION, 0); 
+                                     current_mission_type_, // <--- Xác nhận đúng loại type
+                                     0); 
+        // -------------------------
+
         send_mavlink_message(&msg);
     }
 };

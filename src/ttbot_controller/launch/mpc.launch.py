@@ -28,21 +28,19 @@ def generate_launch_description():
     # Tăng tầm nhìn lên 30 bước (3 giây) để đường đi mượt hơn, giảm lắc
     
     dt_mpc_arg  = DeclareLaunchArgument("dt_mpc", default_value="0.1")
+
+    # 1. GIẢM HORIZON (QUAN TRỌNG)
+    # Giảm từ 30 xuống 20. 
+    # Lý do: Nhìn xa quá (3 giây) xe sẽ có xu hướng "cắt cua" (ăn gian) để đi đường tắt.
+    # Nhìn gần bắt buộc nó phải xử lý khúc cua ngay trước mặt.
     Np_arg      = DeclareLaunchArgument("N_p", default_value="30") 
 
-    # 3. TRỌNG SỐ "ĐIỂM NGỌT"
+    # Giảm bớt áp lực bám đường
+    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="8.0")   
+    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="5.0")
     
-    # Q_ey: Giữ ở mức cao vừa phải.
-    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="60.0")   
-    
-    # Q_epsi: Quan trọng. Giữ chặt hướng đầu xe.
-    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="30.0")
-    
-    # R_delta: ĐIỂM CÂN BẰNG
-    # 0.5 thì giật, 6.0 thì văng -> Chọn 2.5 hoặc 3.0
-    # Mức này đủ để kìm hãm dao động nhưng vẫn cho phép bẻ lái nhanh.
-    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="3.0")
-    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="6.0")
+    # TĂNG RẤT MẠNH độ cứng tay lái -> Chặn đứng dao động
+    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="100.0")
 
     # 5. Node Definition
     mpc_node = Node(

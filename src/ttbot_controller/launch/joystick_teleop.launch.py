@@ -42,7 +42,7 @@ def generate_launch_description():
             "axis_linear.x": 1,
             "scale_linear.x": 1.5,
             "axis_angular.yaw": 3,
-            "scale_angular.yaw": 0.133,
+            "scale_angular.yaw": -1.33,
         }],
         remappings=[
             ('/cmd_vel', '/joy_cmd_vel') # Output topic này giờ là TwistStamped

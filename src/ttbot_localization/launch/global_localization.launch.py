@@ -37,7 +37,7 @@ def generate_launch_description():
             ('imu', '/imu/data_filtered'),
             ('imu/data', '/imu/data_filtered'),          # IMU đã qua lọc Madgwick 
             ('gps/fix', '/gps/fix'),                     # Topic GPS 
-            ('odometry/filtered', '/odometry/filtered'),    # Input feedback: Vị trí global hiện tại
+            ('odometry/filtered', '/odometry/global'),    # Input feedback: Vị trí global hiện tại
             ('odometry/gps', '/odometry/gps'),              # Output
         ]
     )

@@ -112,7 +112,7 @@ install(TARGETS
 )
 
 install(
-  DIRECTORY config launch path
+  DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}/
 )
 

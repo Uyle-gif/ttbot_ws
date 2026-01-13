@@ -99,7 +99,7 @@ def generate_launch_description():
                 condition=IfCondition(run_qgc),
                 parameters=[{
                     'use_sim_time': use_sim_time,
-                    'heading_offset_deg': 0.0     
+                    'heading_offset_deg': -90.0     
                 }]
             )
         ]

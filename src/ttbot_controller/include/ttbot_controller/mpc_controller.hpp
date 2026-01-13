@@ -96,6 +96,18 @@ private:
     // [MỚI] Thêm 2 Publisher để vẽ đồ thị đánh giá
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_cte_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr error_heading_pub_;
+    // [THÊM MỚI] Biến lưu trạng thái Robot hiện tại
+    double current_pose_x_ = 0.0;
+    double current_pose_y_ = 0.0;
+    double current_pose_yaw_ = 0.0;
+    bool has_odom_ = false;
+
+    // [THÊM MỚI] Biến lưu "Gốc Tọa Độ Ảo" (Reference Frame)
+    // Chúng ta sẽ dùng biến này để trừ đi sai số 350m
+    double mpc_ref_x_ = 0.0;
+    double mpc_ref_y_ = 0.0;
+    double mpc_ref_yaw_ = 0.0;
+    bool is_ref_set_ = false; // Cờ đánh dấu đã chốt gốc chưa
 };
 
 #endif // TTBOT_CONTROLLER_MPC_CONTROLLER_HPP_
