@@ -57,6 +57,12 @@ private:
     double max_steer_;     // rad
     double max_omega_;     // rad/s (tính từ max_steer)
 
+    // Thêm vào trong class MpcController, phần private:
+    double speed_ramp_up_dist_;
+    double speed_ramp_down_dist_;
+    double min_speed_;
+
+
     // Weights (Trọng số)
     int    N_p_;       // Horizon
     double dt_mpc_;    // Step time

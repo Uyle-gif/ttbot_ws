@@ -33,14 +33,14 @@ def generate_launch_description():
     # Giảm từ 30 xuống 20. 
     # Lý do: Nhìn xa quá (3 giây) xe sẽ có xu hướng "cắt cua" (ăn gian) để đi đường tắt.
     # Nhìn gần bắt buộc nó phải xử lý khúc cua ngay trước mặt.
-    Np_arg      = DeclareLaunchArgument("N_p", default_value="30") 
+    Np_arg      = DeclareLaunchArgument("N_p", default_value="20") 
 
     # Giảm bớt áp lực bám đường
-    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="8.0")   
-    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="5.0")
+    Q_ey_arg    = DeclareLaunchArgument("Q_ey", default_value="10.0")   
+    Q_epsi_arg  = DeclareLaunchArgument("Q_epsi", default_value="8.0")
     
     # TĂNG RẤT MẠNH độ cứng tay lái -> Chặn đứng dao động
-    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="100.0")
+    R_delta_arg = DeclareLaunchArgument("R_delta", default_value="20.0")
 
     # 5. Node Definition
     mpc_node = Node(

@@ -46,7 +46,7 @@ MpcController::MpcController()
 
     // 2. ROS setup
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odometry/global", 10,
+        "/odometry/filtered", 10,
         std::bind(&MpcController::odomCallback, this, std::placeholders::_1));
 
     path_sub_ = this->create_subscription<nav_msgs::msg::Path>(

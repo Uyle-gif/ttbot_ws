@@ -157,16 +157,8 @@ mkdir -p ~/bag_files
 cd ~/bag_files
 
 # Ghi lại các topic quan trọng
-ros2 bag record -o test_lan_1 \
-  /gps/fix \
-  /odometry/global \
-  /imu/data_filtered \
-  /ackermann_controller/cmd_vel \
-  /ackermann_controller/odom \
-  /mpc_path \
-  /tf \
-  /tf_static
-```
+ros2 bag record -a -o full_data_test
+
 Cho xe chạy hết đường (Path). Sau khi xe dừng, quay lại terminal bấm Ctrl+C để lưu file.
 ## 2. updating....
 

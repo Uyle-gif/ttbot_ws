@@ -27,10 +27,10 @@ def generate_launch_description():
     wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.65")
     max_steer_deg_arg = DeclareLaunchArgument("max_steer_deg", default_value="30.0")
     
-    k_gain_arg = DeclareLaunchArgument("k_gain", default_value="2.5", description="Cross track error gain")
+    k_gain_arg = DeclareLaunchArgument("k_gain", default_value="0.65", description="Cross track error gain")
     
     # Tăng Soft lên một chút để mượt hơn
-    k_soft_arg = DeclareLaunchArgument("k_soft", default_value="0.6", description="Softening gain")
+    k_soft_arg = DeclareLaunchArgument("k_soft", default_value="1.0", description="Softening gain")
 
     stanley_node = Node(
         package="ttbot_controller",
