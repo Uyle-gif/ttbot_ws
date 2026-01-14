@@ -18,3 +18,5 @@ __pycache__/
 # Misc
 *.swp
 *.swo
+*.db3
+*_data/
