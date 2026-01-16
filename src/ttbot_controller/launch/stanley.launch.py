@@ -21,21 +21,16 @@ def generate_launch_description():
     )
 
     # ==== Stanley Params Tuning ====
-    # desired_speed: Tốc độ tối đa khi đi thẳng
+    # Giữ nguyên speed nếu muốn test performance, hoặc giảm về 1.0 nếu thấy lắc
     desired_speed_arg = DeclareLaunchArgument("desired_speed", default_value="1.5") 
     
-    # min_speed: Tốc độ tối thiểu khi vào cua gắt (quan trọng để không bị vọt)
-    min_speed_arg = DeclareLaunchArgument("min_speed", default_value="0.3")
-
-    # slow_down_factor: Càng lớn thì giảm tốc càng gắt khi đánh lái
-    slow_down_factor_arg = DeclareLaunchArgument("slow_down_factor", default_value="4.0")
-
     wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.65")
     max_steer_deg_arg = DeclareLaunchArgument("max_steer_deg", default_value="30.0")
     
-    # K_gain tăng lên 2.5 để phản ứng mạnh hơn với sai số
-    k_gain_arg = DeclareLaunchArgument("k_gain", default_value="2.5")
-    k_soft_arg = DeclareLaunchArgument("k_soft", default_value="1.0")
+    k_gain_arg = DeclareLaunchArgument("k_gain", default_value="2.5", description="Cross track error gain")
+    
+    # Tăng Soft lên một chút để mượt hơn
+    k_soft_arg = DeclareLaunchArgument("k_soft", default_value="0.6", description="Softening gain")
 
     stanley_node = Node(
         package="ttbot_controller",
@@ -43,15 +38,13 @@ def generate_launch_description():
         name="stanley_controller",
         output="screen",
         parameters=[{
-            "use_sim_time":     LaunchConfiguration("use_sim_time"),
-            "path_file":        LaunchConfiguration("path_file"),
-            "desired_speed":    LaunchConfiguration("desired_speed"),
-            "min_speed":        LaunchConfiguration("min_speed"),
-            "slow_down_factor": LaunchConfiguration("slow_down_factor"),
-            "wheel_base":       LaunchConfiguration("wheel_base"),
-            "max_steer_deg":    LaunchConfiguration("max_steer_deg"),
-            "k_gain":           LaunchConfiguration("k_gain"),
-            "k_soft":           LaunchConfiguration("k_soft"),
+            "use_sim_time":   LaunchConfiguration("use_sim_time"),
+            "path_file":      LaunchConfiguration("path_file"),
+            "desired_speed":  LaunchConfiguration("desired_speed"),
+            "wheel_base":     LaunchConfiguration("wheel_base"),
+            "max_steer_deg":  LaunchConfiguration("max_steer_deg"),
+            "k_gain":         LaunchConfiguration("k_gain"),
+            "k_soft":         LaunchConfiguration("k_soft"),
         }]
     )
 
@@ -59,8 +52,6 @@ def generate_launch_description():
         use_sim_time_arg,
         path_file_arg,
         desired_speed_arg,
-        min_speed_arg,
-        slow_down_factor_arg,
         wheel_base_arg,
         max_steer_deg_arg,
         k_gain_arg,

@@ -12,5 +12,5 @@ joy_teleop:
           offset: 0.0
         twist-angular-z:
           axis: 3
-          scale: -1.33
+          scale: 1.33
           offset: 0.0

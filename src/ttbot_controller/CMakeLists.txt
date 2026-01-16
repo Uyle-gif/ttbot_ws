@@ -56,6 +56,7 @@ ament_target_dependencies(stanley_controller
   tf2
   tf2_geometry_msgs
   ament_index_cpp
+  tf2_ros
 )
 
 install(
