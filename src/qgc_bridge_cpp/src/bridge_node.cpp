@@ -56,6 +56,7 @@ public:
         // 3. Tạo Publishers
         path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/mpc_path", 10);
         pid_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/pid_all_tuning", 10);
+        mpc_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/mpc_tuning", 10); 
         arm_pub_ = this->create_publisher<std_msgs::msg::Bool>("/system/armed", 10);
 
         // 4. Tạo Subscribers
@@ -90,6 +91,7 @@ public:
 
         // Gửi PID lần đầu
         publish_pid_to_ros();
+        publish_mpc_to_ros(); 
     }
 
     ~QGCBridgeNode() {
@@ -134,6 +136,7 @@ private:
     // ROS Handles
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr pid_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mpc_pub_; 
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr arm_pub_;
 
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_sub_;
@@ -176,6 +179,41 @@ private:
         rem_addr_.sin_port = htons(14550);
     }
 
+    // --- [THÊM MỚI] Hàm tính khoảng cách ---
+    double calculate_distance(double x1, double y1, double x2, double y2) {
+        return std::sqrt(std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2));
+    }
+
+    // --- [THÊM MỚI] Hàm nội suy tuyến tính ---
+    void interpolate_and_add_points(double start_x, double start_y, double end_x, double end_y) {
+        const double POINT_DENSITY = 0.2; // Mật độ: 20cm/điểm
+        
+        double dist = calculate_distance(start_x, start_y, end_x, end_y);
+        
+        // Nếu điểm quá gần thì chỉ thêm điểm đích
+        if (dist < POINT_DENSITY) {
+            geometry_msgs::msg::PoseStamped pose;
+            pose.header.frame_id = "map";
+            pose.pose.position.x = end_x;
+            pose.pose.position.y = end_y;
+            current_path_.poses.push_back(pose);
+            return;
+        }
+
+        // Chia nhỏ quãng đường
+        int num_points = std::floor(dist / POINT_DENSITY);
+        double step_x = (end_x - start_x) / num_points;
+        double step_y = (end_y - start_y) / num_points;
+
+        for (int i = 1; i <= num_points; ++i) {
+            geometry_msgs::msg::PoseStamped pose;
+            pose.header.frame_id = "map";
+            pose.pose.position.x = start_x + (step_x * i);
+            pose.pose.position.y = start_y + (step_y * i);
+            current_path_.poses.push_back(pose);
+        }
+    }
+
     void send_mavlink_message(mavlink_message_t* msg) {
         uint8_t buf[MAVLINK_MAX_PACKET_LEN];
         uint16_t len = mavlink_msg_to_send_buffer(buf, msg);
@@ -191,6 +229,13 @@ private:
         param_dict_["VEL2_KP"] = 1.5; param_dict_["VEL2_KI"] = 0.01; param_dict_["VEL2_KD"] = 0.5;
         param_dict_["POS_KP"] = 0.8;  param_dict_["POS_KI"] = 0.00; param_dict_["POS_KD"] = 0.05;
         param_dict_["MAX_SPEED"] = 2.0;
+        // MPC
+        param_dict_["MPC_SPEED"]   = 1.5f;  // Desired Speed
+        param_dict_["MPC_NP"]      = 20.0f; // Horizon Steps (Int nhưng truyền Float)
+        param_dict_["MPC_DT"]      = 0.1f;  // Time Step
+        param_dict_["MPC_Q_EY"]    = 10.0f; // CTE Weight
+        param_dict_["MPC_Q_EPSI"]  = 8.0f;  // Heading Error Weight
+        param_dict_["MPC_R_DELTA"] = 20.0f; // Steering Effort Weight          
 
         for(auto const& [key, val] : param_dict_) {
             param_keys_.push_back(key);
@@ -207,6 +252,20 @@ private:
         pid_pub_->publish(msg);
     }
 
+    void publish_mpc_to_ros() {
+    auto msg = std_msgs::msg::Float32MultiArray();
+    // Quy ước thứ tự: [0]:Speed, [1]:Np, [2]:dt, [3]:Q_ey, [4]:Q_epsi, [5]:R_delta
+    msg.data = {
+        param_dict_["MPC_SPEED"],
+        param_dict_["MPC_NP"],
+        param_dict_["MPC_DT"],
+        param_dict_["MPC_Q_EY"],
+        param_dict_["MPC_Q_EPSI"],
+        param_dict_["MPC_R_DELTA"]
+    };
+    mpc_pub_->publish(msg);
+    }
+
     // --- Periodic Tasks ---
 
     void send_heartbeat() {
@@ -215,7 +274,7 @@ private:
         if (is_armed_) base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
 
         mavlink_msg_heartbeat_pack(sys_id_, comp_id_, &msg,
-            MAV_TYPE_GROUND_ROVER, MAV_AUTOPILOT_ARDUPILOTMEGA, base_mode, 0, MAV_STATE_ACTIVE);
+            MAV_TYPE_GROUND_ROVER, MAV_AUTOPILOT_GENERIC, base_mode, 0, MAV_STATE_ACTIVE);
         send_mavlink_message(&msg);
     }
 
@@ -440,10 +499,30 @@ private:
                 current_path_.header.frame_id = "map";
                 path_pub_->publish(current_path_);
                 send_mission_ack();
-                break;
+                break;     
+            case MAVLINK_MSG_ID_MISSION_REQUEST_LIST: // SỬA LỖI MISSION FAILED
+                handle_mission_request_list(msg);
+                break;     
             default:
                 break;
         }
+    }
+
+    // [ĐÃ SỬA - CÁCH MỚI] Sử dụng Struct để đóng gói tin nhắn (An toàn hơn)
+    void handle_mission_request_list(const mavlink_message_t& msg) {
+        mavlink_message_t ack_msg;
+        mavlink_mission_count_t mcount; // Tạo struct chứa dữ liệu
+        
+        // Gán từng trường dữ liệu rõ ràng
+        mcount.target_system = msg.sysid;
+        mcount.target_component = msg.compid;
+        mcount.count = 0; // Số lượng nhiệm vụ = 0
+        mcount.mission_type = MAV_MISSION_TYPE_MISSION;
+        
+        // Dùng hàm encode: Chỉ cần truyền 4 tham số chuẩn
+        mavlink_msg_mission_count_encode(sys_id_, comp_id_, &ack_msg, &mcount);
+            
+        send_mavlink_message(&ack_msg);
     }
 
     void handle_param_set(const mavlink_message_t& msg) {
@@ -473,6 +552,12 @@ private:
             if (key.find("VEL") != std::string::npos || key.find("POS") != std::string::npos) {
                 publish_pid_to_ros();
             }
+            // [THÊM MỚI] Kiểm tra nếu là MPC
+            else if (key.find("MPC") != std::string::npos) {
+                publish_mpc_to_ros();
+                RCLCPP_INFO(this->get_logger(), "MPC Params Updated from QGC: %s = %.2f", key.c_str(), pset.param_value);
+            }
+            
         }
     }
 
@@ -578,7 +663,7 @@ private:
             // Thêm điều kiện: Chỉ xử lý tọa độ nếu là MISSION_TYPE_MISSION
             if (current_mission_type_ == MAV_MISSION_TYPE_MISSION) {
                 if (item.command == MAV_CMD_NAV_WAYPOINT && home_set_) {
-                    // Chuyển GPS -> Local XY
+                    // 1. Tính tọa độ điểm đích (Target Point) từ GPS
                     double wp_lat = item.x / 1e7;
                     double wp_lon = item.y / 1e7;
                     
@@ -586,14 +671,23 @@ private:
                     double dLat = (wp_lat - origin_lat_) * M_PI / 180.0;
                     double dLon = (wp_lon - origin_lon_) * M_PI / 180.0;
 
-                    double x = dLon * EARTH_RADIUS * std::cos(lat0_rad);
-                    double y = dLat * EARTH_RADIUS;
+                    double target_x = dLon * EARTH_RADIUS * std::cos(lat0_rad);
+                    double target_y = dLat * EARTH_RADIUS;
 
-                    geometry_msgs::msg::PoseStamped pose;
-                    pose.header.frame_id = "map";
-                    pose.pose.position.x = x;
-                    pose.pose.position.y = y;
-                    current_path_.poses.push_back(pose);
+                    // 2. Xác định điểm bắt đầu (Start Point)
+                    double start_x = 0.0;
+                    double start_y = 0.0;
+
+                    if (!current_path_.poses.empty()) {
+                        // Lấy điểm cuối cùng đã thêm vào làm điểm bắt đầu để nối tiếp
+                        start_x = current_path_.poses.back().pose.position.x;
+                        start_y = current_path_.poses.back().pose.position.y;
+                    } 
+                    // Nếu path rỗng, start_x/y mặc định là 0.0 (tức là tại vị trí Home)
+
+                    // 3. Gọi hàm nội suy để chia nhỏ đường đi thành nhiều điểm mịn
+                    // (Thay thế cho việc push_back trực tiếp như trước)
+                    interpolate_and_add_points(start_x, start_y, target_x, target_y);
                 }
             }
             // -------------------------

@@ -24,8 +24,6 @@ include_directories(
   ${Eigen3_INCLUDE_DIRS} 
 )
 
-
-
 # --- Node Ackermann controller ---
 add_executable(ackermann_controller
   src/ackermann_controller.cpp
@@ -46,8 +44,6 @@ install(
   TARGETS ackermann_controller
   DESTINATION lib/${PROJECT_NAME}
 )
-
-
 
 # --- Node Stanley controller ---
 add_executable(stanley_controller
@@ -103,13 +99,6 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-add_executable(gps_path_publisher src/gps_path_publisher.cpp)
-ament_target_dependencies(gps_path_publisher rclcpp nav_msgs geometry_msgs sensor_msgs)
-
-install(TARGETS
-  gps_path_publisher   
-  DESTINATION lib/${PROJECT_NAME}
-)
 
 install(
   DIRECTORY config launch
@@ -128,14 +117,6 @@ install(TARGETS
   stamped_twist_mux
   DESTINATION lib/${PROJECT_NAME}
 )
-
-
-
-
-
-
-
-
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
