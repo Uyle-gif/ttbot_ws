@@ -5,26 +5,26 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
-    arg_port = DeclareLaunchArgument(
+    
+    gps_port_arg = DeclareLaunchArgument(
         'port', 
         default_value='/dev/ttbot_gps',
         description='Serial port for GPS'
     )
     
-    arg_baud = DeclareLaunchArgument(
+    gps_baud_arg = DeclareLaunchArgument(
         'baud', 
         default_value='19200', 
         description='Baudrate for GPS'
     )
     
-    arg_frame_id = DeclareLaunchArgument(
+    gps_frame_arg = DeclareLaunchArgument(
         'frame_id', 
         default_value='gps_link', 
         description='TF Frame ID for GPS'
     )
-
-    # nmea_navsat_driver
-    gps_node = Node(
+    
+    gps_driver_node = Node(
         package='nmea_navsat_driver',
         executable='nmea_serial_driver',
         name='ublox_driver_node',
@@ -44,8 +44,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        arg_port,
-        arg_baud,
-        arg_frame_id,
-        gps_node
+        gps_port_arg,
+        gps_baud_arg,
+        gps_frame_arg,
+        gps_driver_node
     ])

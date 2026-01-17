@@ -3,20 +3,16 @@
 <package format="3">
   <name>ttbot_bringup</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Bringup package for TTBot</description>
   <maintainer email="uylegia7@gmail.com">uylegia</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-
-
   <exec_depend>ttbot_controller</exec_depend>
   <exec_depend>ttbot_description</exec_depend>
   <exec_depend>ttbot_localization</exec_depend>
-
-
-
+  <exec_depend>ttbot_sensors</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
