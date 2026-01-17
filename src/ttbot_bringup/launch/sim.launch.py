@@ -5,7 +5,7 @@ from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, Time
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.conditions import IfCondition
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetRemap # <--- Nhớ import SetRemap
 
 def generate_launch_description():
 
@@ -13,61 +13,20 @@ def generate_launch_description():
     pkg_localization = get_package_share_directory('ttbot_localization')
     pkg_controller = get_package_share_directory('ttbot_controller')
 
-
     use_sim_time = LaunchConfiguration('use_sim_time')
     arg_sim_time = DeclareLaunchArgument('use_sim_time', default_value='true')
 
     run_qgc = LaunchConfiguration('run_qgc')
-    arg_run_qgc = DeclareLaunchArgument(
-        'run_qgc', 
-        default_value='true', 
-        description='Enable QGroundControl Bridge'
-    )
-
-
-    qgc_bridge_node = TimerAction(
-        period=15.0, 
-        actions=[
-            Node(
-                package='qgc_bridge_cpp',      # <--- [SỬA] Tên gói C++ mới
-                executable='qgc_bridge_node',
-                name='qgc_bridge_node',
-                output='screen',
-                condition=IfCondition(run_qgc),
-                # [THÊM MỚI] --- THAM SỐ CẤU HÌNH ---
-                parameters=[{  # Đồng bộ giờ
-                    'use_sim_time': use_sim_time,
-                    'heading_offset_deg': 90.0      # Chỉnh hướng: 90.0 cho Gazebo
-                }]
-                # -----------------------------------
-            )
-        ]
-    )
-    
+    arg_run_qgc = DeclareLaunchArgument('run_qgc', default_value='true', description='Enable QGC Bridge')
 
     run_joy = LaunchConfiguration('run_joy')
-    arg_run_joy = DeclareLaunchArgument(
-        'run_joy', 
-        default_value='false',
-        description='Set to true to run joystick teleop'
-    )
+    arg_run_joy = DeclareLaunchArgument('run_joy', default_value='false', description='Run joystick')
 
     controller_type = LaunchConfiguration('controller_type')
-    arg_controller = DeclareLaunchArgument(
-        'controller_type', 
-        default_value='mpc',
-        description='Choose controller: "stanley" or "mpc"'
-    )
+    arg_controller = DeclareLaunchArgument('controller_type', default_value='mpc')
 
     run_path = LaunchConfiguration('run_path')
-    arg_run_path = DeclareLaunchArgument(
-        'run_path',
-        default_value='false',
-        description='Set to true to publish path from CSV'
-    )
-
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    arg_sim_time = DeclareLaunchArgument('use_sim_time', default_value='true')
+    arg_run_path = DeclareLaunchArgument('run_path', default_value='false')
 
     run_rviz = LaunchConfiguration('run_rviz')
     arg_rviz = DeclareLaunchArgument('run_rviz', default_value='false')
@@ -75,7 +34,7 @@ def generate_launch_description():
     path_file = LaunchConfiguration('path_file')
     arg_path = DeclareLaunchArgument('path_file', default_value='path_l.csv')
 
-
+    
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_description, 'launch', 'gazebo.launch.py')),
         launch_arguments={'use_sim_time': use_sim_time}.items()
@@ -91,6 +50,34 @@ def generate_launch_description():
         ]
     )
 
+    joy_launch_group = GroupAction(
+        condition=IfCondition(run_joy),
+        actions=[
+            SetRemap(src='/cmd_vel', dst='/joy_cmd_vel'),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'joystick_teleop.launch.py')),
+                launch_arguments={'use_sim_time': use_sim_time}.items()
+            )
+        ]
+    )
+
+    stamped_mux_node = Node(
+        package='ttbot_controller',
+        executable='stamped_twist_mux',
+        name='stamped_twist_mux',
+        output='screen',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'joy_timeout': 0.5 
+        }],
+        remappings=[
+            ('joy_cmd_vel', '/joy_cmd_vel'),
+            ('mpc_cmd_vel', '/mpc_cmd_vel'),
+            ('cmd_cmd_out', '/ackermann_controller/cmd_vel') 
+        ]
+    )
+
+
     localization_launch = TimerAction(
         period=8.0,
         actions=[
@@ -101,18 +88,28 @@ def generate_launch_description():
         ]
     )
 
-    joy_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'joystick_teleop.launch.py')),
-        condition=IfCondition(run_joy),
-        launch_arguments={'use_sim_time': use_sim_time}.items()
+    qgc_bridge_node = TimerAction(
+        period=15.0, 
+        actions=[
+            Node(
+                package='qgc_bridge_cpp',      
+                executable='qgc_bridge_node',
+                name='qgc_bridge_node',
+                output='screen',
+                condition=IfCondition(run_qgc),
+                parameters=[{ 
+                    'use_sim_time': use_sim_time,
+                    'heading_offset_deg': 90.0 
+                }]
+            )
+        ]
     )
-
 
     path_pub_launch = GroupAction(
         condition=IfCondition(run_path),
         actions=[
             TimerAction(
-                period=20.0,
+                period=16.0, 
                 actions=[
                     IncludeLaunchDescription(
                         PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'path_publisher.launch.py')),
@@ -123,10 +120,11 @@ def generate_launch_description():
         ]
     )
 
-    
     mpc_group = GroupAction(
         condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mpc'"])),
         actions=[
+            SetRemap(src='/cmd_vel', dst='/mpc_cmd_vel'),
+            SetRemap(src='/ackermann_controller/cmd_vel', dst='/mpc_cmd_vel'),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'mpc.launch.py')),
                 launch_arguments={'use_sim_time': use_sim_time, 'desired_speed': '1.5'}.items()
@@ -137,6 +135,8 @@ def generate_launch_description():
     stanley_group = GroupAction(
         condition=IfCondition(PythonExpression(["'", controller_type, "' == 'stanley'"])),
         actions=[
+            SetRemap(src='/cmd_vel', dst='/mpc_cmd_vel'),
+            SetRemap(src='/ackermann_controller/cmd_vel', dst='/mpc_cmd_vel'),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'stanley.launch.py')),
                 launch_arguments={'use_sim_time': use_sim_time, 'desired_speed': '1.5'}.items()
@@ -159,7 +159,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
     
-
     return LaunchDescription([
         arg_sim_time,
         arg_run_qgc,
@@ -171,10 +170,14 @@ def generate_launch_description():
 
         gazebo_launch,
         low_level_control_launch,
+        
+        joy_launch_group,
+        stamped_mux_node, 
+        qgc_bridge_node,
+        
         localization_launch,
         path_pub_launch,
-        joy_launch,
         high_level_control_delayed,
-        qgc_bridge_node,
+        
         rviz_node
     ])
