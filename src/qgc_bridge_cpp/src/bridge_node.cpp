@@ -70,8 +70,8 @@ public:
         odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/odometry/global", 10, std::bind(&QGCBridgeNode::odom_callback, this, std::placeholders::_1));
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/imu/data_filtered", qos_sensor, std::bind(&QGCBridgeNode::imu_callback, this, std::placeholders::_1));
+        // imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        //     "/imu/data_filtered", qos_sensor, std::bind(&QGCBridgeNode::imu_callback, this, std::placeholders::_1));
 
         // 5. Timers (Thay thế luồng)
         // Timer đọc dữ liệu UDP (chạy cực nhanh 100Hz - 10ms)
@@ -302,49 +302,7 @@ private:
         send_mavlink_message(&msg);
     }
 
-    // --- Callbacks ---
 
-    void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
-        static int process_counter = 0;
-        if (++process_counter % 5 != 0) return; // Giảm tải, xử lý 20% dữ liệu
-
-        // Chuyển Quaternion sang Euler
-        double qx = msg->orientation.x;
-        double qy = msg->orientation.y;
-        double qz = msg->orientation.z;
-        double qw = msg->orientation.w;
-
-        // Roll
-        double sinr_cosp = 2 * (qw * qx + qy * qz);
-        double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
-        roll_ = std::atan2(sinr_cosp, cosr_cosp);
-
-        // Pitch
-        double sinp = 2 * (qw * qy - qz * qx);
-        if (std::abs(sinp) >= 1)
-            pitch_ = std::copysign(M_PI / 2, sinp);
-        else
-            pitch_ = std::asin(sinp);
-
-        // Yaw
-        double siny_cosp = 2 * (qw * qz + qx * qy);
-        double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
-        double raw_yaw = std::atan2(siny_cosp, cosy_cosp);
-        
-        yaw_ = -raw_yaw + heading_offset_rad_; // <--- QUAN TRỌNG: Dấu trừ ở đây
-
-        // Chuẩn hóa về khoảng -PI đến +PI
-        while (yaw_ > M_PI) yaw_ -= 2 * M_PI;
-        while (yaw_ < -M_PI) yaw_ += 2 * M_PI;
-
-        has_orientation_ = true;
-
-        mavlink_message_t mav_msg;
-        mavlink_msg_attitude_pack(sys_id_, comp_id_, &mav_msg,
-            get_boot_time_ms(), roll_, pitch_, yaw_, 
-            msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
-        send_mavlink_message(&mav_msg);
-    }
 
     void gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
         // --- PHẦN 1: PHÂN TÍCH TRẠNG THÁI GPS (QUAN TRỌNG NHẤT) ---
@@ -389,23 +347,6 @@ private:
             send_mavlink_message(&mav_msg);
         }
 
-        // --- PHẦN 4: GỬI GLOBAL_POSITION_INT (Vị trí hiện tại) ---
-        // Lấy hướng từ IMU (nếu có), nếu không thì để 0
-        uint16_t heading_cdeg = 0;
-        if (has_orientation_) {
-            double deg = yaw_ * 180.0 / M_PI;
-            if (deg < 0) deg += 360.0;
-            heading_cdeg = (uint16_t)(deg * 100);
-        }
-
-        mavlink_message_t msg_pos;
-        mavlink_msg_global_position_int_pack(sys_id_, comp_id_, &msg_pos,
-            boot_time,
-            lat_int, lon_int, alt_int,
-            10000,          // Relative Alt (giả lập 10m so với đất)
-            0, 0, 0,        // Vận tốc (vx, vy, vz) - Có thể lấy từ Odom nếu cần chính xác
-            heading_cdeg);  // Hướng mũi xe
-        send_mavlink_message(&msg_pos);
         
         // --- PHẦN 5: GỬI GPS_RAW_INT (Trạng thái vệ tinh) ---
         // Đây là gói tin quyết định QGC báo "No GPS Lock" hay "3D Lock"
@@ -427,7 +368,6 @@ private:
         if (!home_set_) return;
 
         // --- 1. Chuyển đổi Vị trí (X, Y map -> Lat, Lon) ---
-        // Giả định: (0,0) của map trùng với vị trí Home (origin_lat_, origin_lon_)
         double x = msg->pose.pose.position.x;
         double y = msg->pose.pose.position.y;
 
@@ -438,37 +378,62 @@ private:
         double current_lat = origin_lat_ + (dLat * 180.0 / M_PI);
         double current_lon = origin_lon_ + (dLon * 180.0 / M_PI);
 
-        // --- 2. Lấy Heading từ /odometry/global ---
-        // EKF Global thường trả về hướng chuẩn trong frame Map/Odom
+        // --- 2. Xử lý Quaternion sang Euler (Roll, Pitch, Yaw) ---
+        // [PHẦN MỚI] Tính đủ 3 góc để gửi cho QGC
         double qx = msg->pose.pose.orientation.x;
         double qy = msg->pose.pose.orientation.y;
         double qz = msg->pose.pose.orientation.z;
         double qw = msg->pose.pose.orientation.w;
 
-        // Quaternion -> Yaw
+        // Tính Roll
+        double sinr_cosp = 2 * (qw * qx + qy * qz);
+        double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
+        double odom_roll = std::atan2(sinr_cosp, cosr_cosp);
+
+        // Tính Pitch
+        double sinp = 2 * (qw * qy - qz * qx);
+        double odom_pitch = 0.0;
+        if (std::abs(sinp) >= 1)
+            odom_pitch = std::copysign(M_PI / 2, sinp);
+        else
+            odom_pitch = std::asin(sinp);
+
+        // Tính Yaw
         double siny_cosp = 2 * (qw * qz + qx * qy);
         double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
-        double odom_yaw = std::atan2(siny_cosp, cosy_cosp);
+        double raw_yaw = std::atan2(siny_cosp, cosy_cosp);
 
-        // Xử lý offset nếu hệ trục tọa độ lệch pha (thường ENU là chuẩn, không cần chỉnh nhiều)
-        // Nếu mũi tên trên QGC xoay không đúng, hãy thử đổi dấu: -odom_yaw
-        double final_yaw = -odom_yaw + heading_offset_rad_; 
+        // --- 3. Áp dụng Offset ---
+        double final_yaw = -raw_yaw + heading_offset_rad_; 
 
         // Chuẩn hóa -PI ... +PI
         while (final_yaw > M_PI) final_yaw -= 2 * M_PI;
         while (final_yaw < -M_PI) final_yaw += 2 * M_PI;
 
-        // Đổi sang độ (0-360) cho MAVLink
+        // Đổi sang độ (0-360) cho Global Position
         double deg = final_yaw * 180.0 / M_PI;
         if (deg < 0) deg += 360.0;
         uint16_t heading_cdeg = (uint16_t)(deg * 100);
 
-        // --- 3. Gửi tin nhắn MAVLink ---
+        // --- 4. GỬI TIN NHẮN ATTITUDE (MSG #30) ---
+        // [QUAN TRỌNG] Đây là phần giúp mũi tên trên QGC xoay
+        mavlink_message_t msg_att;
+        mavlink_msg_attitude_pack(sys_id_, comp_id_, &msg_att,
+            get_boot_time_ms(),
+            odom_roll,   
+            odom_pitch,  
+            final_yaw,   // Yaw đã chỉnh offset
+            msg->twist.twist.angular.x, 
+            msg->twist.twist.angular.y, 
+            msg->twist.twist.angular.z);
+        send_mavlink_message(&msg_att);
+
+        // --- 5. GỬI TIN NHẮN VỊ TRÍ (MSG #33) ---
         mavlink_message_t mav_msg;
         mavlink_msg_global_position_int_pack(sys_id_, comp_id_, &mav_msg,
             get_boot_time_ms(),
             (int32_t)(current_lat * 1e7), (int32_t)(current_lon * 1e7),
-            (int32_t)(msg->pose.pose.position.z * 1000) + 10000, // Lấy độ cao từ Odom nếu có
+            (int32_t)(msg->pose.pose.position.z * 1000) + 10000, 
             10000, // Relative Alt
             (int16_t)(msg->twist.twist.linear.x * 100), 
             (int16_t)(msg->twist.twist.linear.y * 100), 
@@ -697,20 +662,30 @@ private:
                     double target_x = dLon * EARTH_RADIUS * std::cos(lat0_rad);
                     double target_y = dLat * EARTH_RADIUS;
 
-                    // 2. Xác định điểm bắt đầu (Start Point)
-                    double start_x = 0.0;
-                    double start_y = 0.0;
+                    
 
-                    if (!current_path_.poses.empty()) {
-                        // Lấy điểm cuối cùng đã thêm vào làm điểm bắt đầu để nối tiếp
-                        start_x = current_path_.poses.back().pose.position.x;
-                        start_y = current_path_.poses.back().pose.position.y;
+                    // Kiểm tra: Đây có phải là điểm đầu tiên của nhiệm vụ không?
+                    if (current_path_.poses.empty()) {
+                        // TRƯỜNG HỢP ĐIỂM ĐẦU TIÊN:
+                        // KHÔNG vẽ đường từ (0,0). 
+                        // Chỉ thêm đúng điểm đích vào danh sách.
+                        // MPC Controller sẽ tự động tính đường từ vị trí hiện tại của xe đến điểm này.
+                        geometry_msgs::msg::PoseStamped pose;
+                        pose.header.frame_id = "map";
+                        pose.pose.position.x = target_x;
+                        pose.pose.position.y = target_y;
+                        current_path_.poses.push_back(pose);
                     } 
-                    // Nếu path rỗng, start_x/y mặc định là 0.0 (tức là tại vị trí Home)
-
-                    // 3. Gọi hàm nội suy để chia nhỏ đường đi thành nhiều điểm mịn
-                    // (Thay thế cho việc push_back trực tiếp như trước)
-                    interpolate_and_add_points(start_x, start_y, target_x, target_y);
+                    else {
+                        // TRƯỜNG HỢP CÁC ĐIỂM TIẾP THEO (WP 2, WP 3...):
+                        // Lấy điểm cuối cùng của đoạn trước làm điểm bắt đầu cho đoạn này
+                        // để đảm bảo đường đi liền mạch.
+                        double start_x = current_path_.poses.back().pose.position.x;
+                        double start_y = current_path_.poses.back().pose.position.y;
+                        
+                        // Gọi hàm chia nhỏ điểm
+                        interpolate_and_add_points(start_x, start_y, target_x, target_y);
+                    }
                 }
             }
             // -------------------------

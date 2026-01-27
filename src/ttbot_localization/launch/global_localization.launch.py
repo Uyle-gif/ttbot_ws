@@ -35,8 +35,8 @@ def generate_launch_description():
         arguments=['--ros-args', '--log-level', 'navsat_transform_node:=info'],
         remappings=[
             ('imu', '/imu/data_filtered'),
-            ('imu/data', '/imu/data_filtered'),          # IMU đã qua lọc Madgwick 
             ('gps/fix', '/gps/fix'),                     # Topic GPS 
+            ('gps/filtered', 'gps/filtered'),
             ('odometry/filtered', '/odometry/global'),    # Input feedback: Vị trí global hiện tại
             ('odometry/gps', '/odometry/gps'),              # Output
         ]

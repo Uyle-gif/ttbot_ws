@@ -25,27 +25,27 @@ def generate_launch_description():
         }]
     )
 
-    imu_filter_node = Node(
-        package='imu_filter_madgwick',
-        executable='imu_filter_madgwick_node',
-        name='imu_filter_madgwick',
-        output='screen',
-        parameters=[{
-            'use_mag': True,
-            'publish_tf': False,
-            'world_frame': 'enu',
-            'fixed_frame': 'odom',
-            'gain': 0.1,
-        }],
-        remappings=[
-            ('imu/data_raw', '/imu/data_raw'),
-            ('imu/mag', '/imu/mag'),
-            ('imu/data', '/imu/data_filtered') 
-        ]
-    )
+    # imu_filter_node = Node(
+    #     package='imu_filter_madgwick',
+    #     executable='imu_filter_madgwick_node',
+    #     name='imu_filter_madgwick',
+    #     output='screen',
+    #     parameters=[{
+    #         'use_mag': True,
+    #         'publish_tf': False,
+    #         'world_frame': 'enu',
+    #         'fixed_frame': 'odom',
+    #         'gain': 0.1,
+    #     }],
+    #     remappings=[
+    #         ('imu/data_raw', '/imu/data_raw'),
+    #         ('imu/mag', '/imu/mag'),
+    #         ('imu/data', '/imu/data_filtered') 
+    #     ]
+    # )
 
     return LaunchDescription([
         imu_port_arg,
         imu_driver_node,
-        imu_filter_node
+        # imu_filter_node
     ])

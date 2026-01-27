@@ -14,7 +14,7 @@ def generate_launch_description():
     static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["--x", "0", "--y", "0","--z", "0.103",
+        arguments=["--x", "0", "--y", "-0.2","--z", "0.13",
                    "--qx", "0", "--qy", "0", "--qz", "0", "--qw", "1",
                    "--frame-id", "base_link",
                    "--child-frame-id", "imu_link"],

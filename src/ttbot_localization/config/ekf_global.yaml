@@ -1,14 +1,57 @@
 navsat_transform_node:
   ros__parameters:
     frequency: 30.0
-    #CHINH CAI NAY THEO VI TRI DIA LY
-    magnetic_declination_radians: -0.00628
+    
+    # Enter the magnetic declination for your location. 
+    # If you don’t know it, see http://www.ngdc.noaa.gov/geomag-web (make sure to convert the value to radians). 
+    # This parameter is needed if your IMU provides its orientation with respect to the magnetic north.
+    magnetic_declination_radians: -0.01082
+
+    # Your IMU should read 0 for yaw when facing east. 
+    # If it doesn’t, enter the offset here (desired_value = offset + sensor_raw_value). 
+    # For example, if your IMU reports 0 when facing north, 
+    # as most of them do, this parameter would be pi/2 (~1.5707963). 
+    # This parameter changed in version 2.2.1. Previously, 
+    # navsat_transform_node assumed that IMUs read 0 when facing north, so yaw_offset was used acordingly.
+    # yaw_offset: 1.5707963
     yaw_offset: 0.0
+
+    # If this is true, the nav_msgs/Odometry message produced by this node has its pose Z value set to 0.
     zero_altitude: true
-    broadcast_cartesian_transform: false
-    publish_filtered_gps: true
+
+    # If true, navsat_transform_node will also transform your robot's world frame (e.g., map) 
+    # position back to GPS coordinates, and publish a sensor_msgs/NavSatFix message on the /gps/filtered topic.
+    publish_filtered_gps: true  # nen de la true roi app se sub vao topic nay de lay vi tri chinh xac hon
+
+
+    # If this is true, navsat_transform_node will broadcast 
+    # the transform between the UTM grid and the frame of the input odometry data. 
+    # See Published Transforms below for more information.
+    broadcast_cartesian_transform: false  # Tat di vi da co TF tu map -> odom roi neu bat len se co them utm -> odom => error
+
+
+    # If true, navsat_transform_node will not get its heading from the IMU data, but from the input odometry message. 
+    # sers should take care to only set this to true if your odometry message has orientation data specified in an 
+    # earth-referenced frame, e.g., as produced by a magnetometer. Additionally, if the odometry source is one of the 
+    # state estimation nodes in robot_localization, the user should have at least one source of absolute orientation 
+    # data being fed into the node, with the _differential and _relative parameters set to false.
     use_odometry_yaw: false  
+    # luc bat he thong robot can biet no dang quay ve huong nao cua trai dat, 
+    # neu bat len thi no se tin vao odometry de lay huong. 
+    # van de la odometry luon coi huong truoc mat la huong X (huong tay), nen bat len se sai
+
+
+    # If true, navsat_transform_node will wait to get a datum from either:
+    # The datum parameter
+    # The set_datum service
+    wait_for_datum: false   # de false thi gps dau tien node nhan duoc la datum (x=0,y=0)
+
+
     delay: 3.0
+
+
+
+
 
 ekf_global_node:
   ros__parameters:
@@ -26,7 +69,7 @@ ekf_global_node:
     odom0_config: [false, false, false,
                    false, false, false,
                    true,  true,  false,
-                   false, false, true,
+                   false, false, false,
                    false, false, false]
     odom0_differential: false
     odom0_queue_size: 10
@@ -36,7 +79,7 @@ ekf_global_node:
                   false, false, true,
                   false, false, false,
                   false, false, true,
-                  true,  false, false]
+                  false,  false, false]
     imu0_differential: false
     imu0_queue_size: 10
     imu0_remove_gravitational_acceleration: true
