@@ -53,6 +53,16 @@ def generate_launch_description():
         ]
     )
 
+    # gz_spawn_entity = Node(
+    #     package="ros_gz_sim",
+    #     executable="create",
+    #     output="screen",
+    #     arguments=[
+    #         "-topic", "robot_description",
+    #         "-name", "ttbot",
+    #         "-z", "0.1" 
+    #     ],
+    # )
     gz_spawn_entity = Node(
         package="ros_gz_sim",
         executable="create",
@@ -60,7 +70,10 @@ def generate_launch_description():
         arguments=[
             "-topic", "robot_description",
             "-name", "ttbot",
-            "-z", "0.1" 
+            
+            "-x", "0.0",  
+            "-y", "0.0",  
+            "-z", "0.5"   # Thả từ độ cao 0.5m (để tránh kẹt bánh vào đất)
         ],
     )
 
@@ -72,12 +85,14 @@ def generate_launch_description():
             "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
             "/gps/fix@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat",
             "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
-            "/world/gps_world/model/ttbot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model"
+            "/world/gps_world/model/ttbot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model",
+            "/velodyne_points/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked"
         ],
         remappings=[
             ('/gps/fix', '/gps/fix'),
             ('/imu', '/imu/out'),
-            ('/world/gps_world/model/ttbot/joint_state', '/joint_states')
+            ('/world/gps_world/model/ttbot/joint_state', '/joint_states'),
+            ('/velodyne_points/points', '/velodyne_points/points')
         ]
     )
 

@@ -12,10 +12,18 @@ def generate_launch_description():
     pkg_description = get_package_share_directory('ttbot_description')
     pkg_localization = get_package_share_directory('ttbot_localization')
     pkg_controller = get_package_share_directory('ttbot_controller')
+  #  pkg_fast_lio = get_package_share_directory('fast_lio')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     arg_sim_time = DeclareLaunchArgument('use_sim_time', default_value='true')
 
+  #  run_fastlio = LaunchConfiguration('run_fastlio')
+    arg_run_fastlio = DeclareLaunchArgument(
+            'run_fastlio',
+            default_value='true', 
+            description='Set to true to run Fast-LIO mapping in Simulation'
+        )
+    
     run_qgc = LaunchConfiguration('run_qgc')
     arg_run_qgc = DeclareLaunchArgument('run_qgc', default_value='true', description='Enable QGC Bridge')
 
@@ -34,11 +42,26 @@ def generate_launch_description():
     path_file = LaunchConfiguration('path_file')
     arg_path = DeclareLaunchArgument('path_file', default_value='path_l.csv')
 
+
     
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_description, 'launch', 'gazebo.launch.py')),
         launch_arguments={'use_sim_time': use_sim_time}.items()
     )
+
+    # fast_lio_config_path = os.path.join(pkg_fast_lio, 'config', 'velodyne_sim.yaml') 
+
+    # fast_lio_node = Node(
+    #     condition=IfCondition(run_fastlio),
+    #     package='fast_lio',
+    #     executable='fastlio_mapping',
+    #     name='fastlio_mapping',
+    #     output='screen',
+    #     parameters=[
+    #         fast_lio_config_path,
+    #         {'use_sim_time': use_sim_time}
+    #     ]
+    # )
 
     low_level_control_launch = TimerAction(
         period=5.0,
@@ -161,6 +184,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         arg_sim_time,
+        arg_run_fastlio,
         arg_run_qgc,
         arg_controller,
         arg_rviz,
@@ -169,6 +193,7 @@ def generate_launch_description():
         arg_run_joy,
 
         gazebo_launch,
+       # fast_lio_node,
         low_level_control_launch,
         
         joy_launch_group,

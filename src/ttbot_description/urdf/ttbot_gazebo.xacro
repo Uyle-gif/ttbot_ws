@@ -113,6 +113,7 @@
         </imu>
     </sensor>
   </gazebo>
+  
 
 
   <gazebo reference="gps_link">
@@ -122,6 +123,47 @@
       <topic>gps/fix</topic>
       <ignition_frame_id>gps_link</ignition_frame_id>
     </sensor>
+  </gazebo>
+
+  <gazebo reference="lidar_link">
+      <sensor name="velodyne_vlp16" type="gpu_lidar">
+          <pose>0 0 0 0 0 0</pose>
+          
+          <topic>/velodyne_points</topic>  <!-- Add leading / -->
+          <ignition_frame_id>lidar_link</ignition_frame_id>  <!-- Add this -->
+          
+          <update_rate>10</update_rate>
+          <gz_frame_id>lidar_link</gz_frame_id>
+          <visualize>true</visualize>
+          <always_on>true</always_on> 
+          
+          <ray>
+              <scan>
+                <horizontal>
+                  <samples>1000</samples>
+                  <resolution>1</resolution>
+                  <min_angle>-3.14159265359</min_angle>
+                  <max_angle>3.14159265359</max_angle>
+                </horizontal>
+                <vertical>
+                  <samples>16</samples>
+                  <resolution>1</resolution>
+                  <min_angle>-0.261799</min_angle>
+                  <max_angle>0.261799</max_angle>
+                </vertical>
+              </scan>
+              <range>
+                  <min>0.3</min>
+                  <max>100.0</max>
+                  <resolution>0.01</resolution>
+              </range>
+              <noise>
+                  <type>gaussian</type>
+                  <mean>0.0</mean>
+                  <stddev>0.01</stddev>
+              </noise>
+          </ray>
+      </sensor>
   </gazebo>
 
   <gazebo>
