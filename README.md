@@ -189,6 +189,11 @@ ros2 run tf2_ros tf2_echo map base_link
 (Nếu hiện Translation/Rotation -> Hệ thống định vị đã thành công)
 
 
+ros2 launch fast_lio mapping.launch.py config_file:=velodyne_sim.yaml use_sim_time:=true
+
+ros2 launch slam_toolbox online_async_launch.py \
+slam_params_file:=/home/uylegia/ttbot_ws/src/ttbot_mapping/params/mapper_params.yaml \
+use_sim_time:=True
 
 
 nano ~/.bashrc

@@ -10,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(pointcloud_to_grid REQUIRED)
 find_package(grid_map_msgs REQUIRED)
 find_package(grid_map_ros REQUIRED)
+find_package(pointcloud_to_laserscan REQUIRED)
 
 install(DIRECTORY
   launch
