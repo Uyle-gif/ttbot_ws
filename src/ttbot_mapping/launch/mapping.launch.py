@@ -1,31 +1,35 @@
 import os
-from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
+    pkg_ttbot_mapping = get_package_share_directory('ttbot_mapping')
+    pkg_slam_toolbox = get_package_share_directory('slam_toolbox')
+
+    pointcloud_to_laserscan_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ttbot_mapping, 'launch', 'pointcloud_to_laserscan.launch.py')
+        )
+    )
+
+    slam_toolbox_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_slam_toolbox, 'launch', 'online_async_launch.py')
+        ),
+        launch_arguments={
+            'slam_params_file': '/home/uylegia/ttbot_ws/src/ttbot_mapping/config/mapper_params.yaml',
+            'use_sim_time': 'True'
+        }.items()
+    )
+
+    delayed_slam = TimerAction(
+        period=3.0,
+        actions=[slam_toolbox_launch]
+    )
 
     return LaunchDescription([
-        Node(
-            package='pointcloud_to_grid',
-            executable='pointcloud_to_grid_node',
-            name='pointcloud_to_grid_node',
-            output='screen',
-            parameters=[{
-                'input_topic': '/velodyne_points/points', 
-                'target_frame': 'odom', 
-                
-                'grid_ros_topic_name': '/grid',     
-                'resolution': 0.1,                 
-                
-                'min_z': -0.1,                    
-                'max_z': 0.5,                      
-                
-                'use_intensity': True,              
-                'filter_intensity': False,        
-                
-                'mapi_gridmap_topic_name': 'intensity_gridmap',
-                'maph_gridmap_topic_name': 'height_gridmap',
-            }]
-        )
+        pointcloud_to_laserscan_launch,
+        delayed_slam
     ])
