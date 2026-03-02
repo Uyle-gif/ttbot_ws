@@ -15,6 +15,7 @@ find_package(pointcloud_to_laserscan REQUIRED)
 install(DIRECTORY
   launch
   config
+  maps
   DESTINATION share/${PROJECT_NAME}
 )
 
