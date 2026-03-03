@@ -73,7 +73,7 @@ def generate_launch_description():
             
             "-x", "0.0",  
             "-y", "0.0",  
-            "-z", "0.5"   # Thả từ độ cao 0.5m (để tránh kẹt bánh vào đất)
+            "-z", "2"   # Thả từ độ cao 0.5m (để tránh kẹt bánh vào đất)
         ],
     )
 
