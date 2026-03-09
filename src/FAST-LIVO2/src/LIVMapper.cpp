@@ -12,6 +12,7 @@ which is included as part of this source code package.
 
 #include "LIVMapper.h"
 #include <vikit/camera_loader.h>
+#include <chrono>
 
 using namespace Sophus;
 LIVMapper::LIVMapper(rclcpp::Node::SharedPtr &node, std::string node_name, const rclcpp::NodeOptions & options)
@@ -343,16 +344,49 @@ void LIVMapper::processImu()
 
 void LIVMapper::stateEstimationAndMapping() 
 {
+  // 1. Mở file CSV để ghi dữ liệu (Static giúp chỉ mở file 1 lần duy nhất)
+  static std::ofstream fout_time(std::string(ROOT_DIR) + "Log/odom_time.csv", std::ios::out);
+  static bool is_header_written = false;
+  if (!is_header_written && fout_time.is_open()) {
+      fout_time << "Timestamp,Mode,Odom_Time_ms,Latency_ms" << std::endl;
+      is_header_written = true;
+  }
+  double sensor_timestamp = LidarMeasures.last_lio_update_time;
+  // 1. Bấm đồng hồ (Lấy mốc thời gian Bắt đầu)
+  auto t_odom_start = std::chrono::high_resolution_clock::now();
+  std::string mode_csv = "";  // Tên ngắn cho file CSV (dễ vẽ biểu đồ Python)
+  std::string mode_term = ""; // Tên dài in ra Terminal (dễ đọc)
+
   switch (LidarMeasures.lio_vio_flg) 
   {
     case VIO:
+      mode_csv = "VIO";
+      mode_term = "VIO (Camera + IMU)";
       handleVIO();
       break;
     case LIO:
     case LO:
+      mode_csv = "LIO";
+      mode_term = "LIO (LiDAR + IMU)";
       handleLIO();
       break;
   }
+  auto t_odom_end = std::chrono::high_resolution_clock::now();
+  double odom_time = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t_odom_end - t_odom_start).count();
+  // Lấy thời gian hiện tại của hệ thống ROS 2 ngay sau khi thuật toán chạy xong
+  double current_ros_time = this->node->get_clock()->now().seconds();
+  double total_latency = (current_ros_time - sensor_timestamp) * 1000.0; // Đổi ra mili-giây
+  // 6. Ghi toàn bộ dữ liệu vào file CSV
+  if (fout_time.is_open()) {
+      fout_time << std::fixed << std::setprecision(6) 
+                << sensor_timestamp << "," 
+                << mode_csv << "," 
+                << odom_time << "," 
+                << total_latency << std::endl;
+  }
+
+  // 7. In ra Terminal (Hiển thị cả 2 thông số để bạn tiện theo dõi trực tiếp)
+  RCLCPP_INFO(this->node->get_logger(), "\033[1;32m[%s] Xử lý: %.2f ms | Độ trễ tổng: %.2f ms\033[0m", mode_term.c_str(), odom_time, total_latency);
 }
 
 void LIVMapper::handleVIO() 
@@ -611,6 +645,8 @@ void LIVMapper::savePCD()
 void LIVMapper::run(rclcpp::Node::SharedPtr &node) 
 {
   rclcpp::Rate rate(5000);
+
+
   while (rclcpp::ok()) 
   {
     rclcpp::spin_some(this->node);

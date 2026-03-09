@@ -84,14 +84,19 @@ ekf_global_node:
     imu0_queue_size: 10
     imu0_remove_gravitational_acceleration: true
 
-    odom1: /odometry/gps
-    odom1_config: [true,  true,  false,
-                   false, false, false,
-                   false, false, false,
-                   false, false, false,
-                   false, false, false]
-    odom1_differential: false
-    odom1_queue_size: 10
+    # # -----------------------------------------------------------
+    # # INPUT 3: FAST-LIVO (SÁT THỦ ĐỊNH VỊ CHÍNH XÁC)
+    # # Chức năng: Thay thế hoàn toàn GPS. Đóng vai trò là "Chân lý" (Ground Truth)
+    # # -----------------------------------------------------------
+    # odom1: /Odometry   # <--- Sửa lại tên topic này cho khớp với output của FAST-LIVO
+    # odom1_config: [true,  true,  false,  # Lấy tọa độ tuyệt đối X, Y (Đổi thành true nếu chạy 3D)
+    #                false, false, true,   # Lấy góc Yaw tuyệt đối
+    #                false, false, false,
+    #                false, false, false,
+    #                false, false, false]
+    # odom1_differential: false  # BẮT BUỘC FALSE: Phải lấy vị trí ghim chết trên bản đồ
+    # odom1_relative: false      # BẮT BUỘC FALSE: Lấy thẳng gốc 0,0 của FAST-LIVO làm gốc map
+    # odom1_queue_size: 10
 
     process_noise_covariance: [0.05, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,   0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
                                0.0,  0.05, 0.0,  0.0,  0.0,  0.0,  0.0,   0.0,   0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
