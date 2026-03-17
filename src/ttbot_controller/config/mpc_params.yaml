@@ -1,16 +1,44 @@
 mpc_controller:
   ros__parameters:
     # MPC & Vehicle Params
-    desired_speed: 1.5
-    wheel_base: 0.65
-    max_steer_deg: 30.0
-    goal_tolerance: 0.3
+    desired_speed: 1.5        # tốc độ xe muốn chạy
+                               # tăng -> xe chạy nhanh hơn, nhưng khó bám đường hơn
+                               # giảm -> xe chậm hơn, dễ ổn định hơn
+
+    wheel_base: 0.65          # chiều dài cơ sở của xe
+                               # tăng -> xe quay chậm hơn, cua rộng hơn
+                               # giảm -> xe quay nhanh hơn, nhạy hơn
+
+    max_steer_deg: 30.0       # góc lái tối đa
+                               # tăng -> ôm cua tốt hơn, nhưng dễ rung hơn
+                               # giảm -> mượt hơn, nhưng cua gắt kém hơn
+
+    goal_tolerance: 0.3       # gần đích bao nhiêu thì coi là tới
+                               # tăng -> dừng sớm hơn, đỡ lắc ở cuối
+                               # giảm -> chính xác hơn, nhưng dễ lắc gần đích
 
     # MPC Horizon / Sampling
-    N_p: 30
-    dt_mpc: 0.1
+    N_p: 30                   # xe nhìn trước bao nhiêu bước
+                               # tăng -> nhìn xa hơn, đi có plan hơn
+                               # nhưng tính toán nặng hơn
+                               # giảm -> phản ứng nhanh hơn, nhưng nhìn ngắn hơn
+
+    dt_mpc: 0.1               # thời gian mỗi bước dự đoán
+                               # tăng -> tính nhẹ hơn, nhưng điều khiển thô hơn
+                               # giảm -> điều khiển mịn hơn, nhưng nặng hơn
 
     # MPC Weights (Tuned for strict tracking & stiff steering)
-    Q_ey: 5.0
-    Q_epsi: 10.0
-    R_delta: 16.0
+    Q_ey: 5.0                 # phạt xe bị lệch ngang khỏi đường
+                               # tăng -> xe ép bám sát đường hơn
+                               # nhưng quá cao thì dễ lắc trái phải
+                               # giảm -> xe mềm hơn, nhưng dễ lệch đường hơn
+
+    Q_epsi: 10.0              # phạt đầu xe bị lệch hướng so với đường
+                               # tăng -> đầu xe quay đúng hướng nhanh hơn
+                               # nhưng dễ đánh lái gắt hơn
+                               # giảm -> xe đỡ gắt hơn, nhưng dễ bị xéo đầu xe
+
+    R_delta: 16.0             # phạt độ lớn góc lái
+                               # tăng -> xe ngại đánh lái nhiều, lái cứng hơn, mượt hơn
+                               # giảm -> xe chịu đánh lái mạnh hơn, ôm cua tốt hơn
+                               # nhưng dễ rung hoặc giật lái hơn
