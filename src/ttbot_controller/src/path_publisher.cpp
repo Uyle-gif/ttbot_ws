@@ -16,28 +16,27 @@ class PathPublisher : public rclcpp::Node
 public:
     PathPublisher() : Node("path_publisher")
     {
-        // 1. Khai báo tham số nhận từ file launch
         this->declare_parameter("frame_id", "odom");
         this->declare_parameter("file_path", "");
 
         frame_id_ = this->get_parameter("frame_id").as_string();
         std::string file_path = this->get_parameter("file_path").as_string();
 
-        // 2. Tạo Publisher
         publisher_ = this->create_publisher<nav_msgs::msg::Path>("/mpc_path", 10);
         
         if (file_path.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "Chua cung cap tham so file_path!");
+            RCLCPP_ERROR(this->get_logger(), "Missing 'file_path' parameter!");
             return;
         }
 
-        // 3. Đọc dữ liệu từ file CSV 1 lần khi khởi động
         if (load_csv(file_path)) {
-            // 4. Chạy Timer publish liên tục mỗi giây (1Hz)
             timer_ = this->create_wall_timer(
-                1000ms, std::bind(&PathPublisher::timer_callback, this));
+                1000ms, [this]() {
+                    this->publish_path_once();
+                    this->timer_->cancel(); 
+                });
             
-            RCLCPP_INFO(this->get_logger(), "Path Publisher Started. Publishing path at 1Hz...");
+            RCLCPP_INFO(this->get_logger(), "Path Publisher Started. Waiting 1 second to publish path (One-shot)...");
         }
     }
 
@@ -49,7 +48,7 @@ private:
 
         std::ifstream file(file_path);
         if (!file.is_open()) {
-            RCLCPP_ERROR(this->get_logger(), "Khong the mo file: %s", file_path.c_str());
+            RCLCPP_ERROR(this->get_logger(), "Failed to open file: %s", file_path.c_str());
             return false;
         }
 
@@ -57,7 +56,6 @@ private:
         int point_count = 0;
 
         while (std::getline(file, line)) {
-            // Bỏ qua dòng trống hoặc dòng tiêu đề (bắt đầu bằng chữ hoặc dấu #)
             if (line.empty() || isalpha(line[0]) || line[0] == '#') continue;
 
             std::stringstream ss(line);
@@ -72,7 +70,6 @@ private:
                 }
             }
 
-            // Đảm bảo có ít nhất tọa độ X và Y
             if (values.size() >= 2) {
                 geometry_msgs::msg::PoseStamped pose;
                 pose.header.frame_id = frame_id_;
@@ -87,21 +84,20 @@ private:
         }
         file.close();
 
-        RCLCPP_INFO(this->get_logger(), ">>> Da load thanh cong %d toa do tu file CSV <<<", point_count);
+        RCLCPP_INFO(this->get_logger(), ">>> Successfully loaded %d coordinates from CSV file <<<", point_count);
         return true;
     }
 
-    void timer_callback()
+    void publish_path_once()
     {
-        // Cập nhật timestamp hiện tại
         path_.header.stamp = this->now();
         
-        // Cập nhật timestamp cho từng điểm bên trong (giúp RViz không báo lỗi TF cũ)
         for (auto& pose : path_.poses) {
             pose.header.stamp = path_.header.stamp;
         }
         
         publisher_->publish(path_);
+        RCLCPP_INFO(this->get_logger(), "--- PATH PUBLISHED SUCCESSFULLY ---");
     }
 
     rclcpp::TimerBase::SharedPtr timer_;
