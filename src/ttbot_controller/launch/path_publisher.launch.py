@@ -22,7 +22,7 @@ def generate_launch_description():
         parameters=[{
             # Nối đường dẫn tuyệt đối một cách an toàn
             "file_path": PathJoinSubstitution([pkg_dir, 'path', LaunchConfiguration("path_file")]),
-            "frame_id": "odom"
+            "frame_id": "map"
         }]
     )
 
