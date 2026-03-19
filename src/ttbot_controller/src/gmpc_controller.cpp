@@ -96,8 +96,8 @@ void GmpcController::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
     }
 
     // Giữ giống baseline để benchmark fair
-    int smooth_passes = 1;
-    int window_size   = 1;
+    int smooth_passes = 25;
+    int window_size   = 3;
 
     std::vector<std::pair<double, double>> smoothed_points = raw_points;
 
