@@ -8,45 +8,32 @@
       lidar_en: 1
       ros_driver_bug_fix: false
 
-##############################33################# CALIB HET LAI #####################################
     extrin_calib:
     
-      # Khoảng cách từ IMU (ở camera) 
-      extrinsic_T: [0.0, 0.0, 0.07]
-      # extrinsic_R: [0.0, -1.0, 0.0, 
-      #               1.0, 0.0, 0.0, 
-      #               0.0, 0.0, 1.0]
+
+
+      extrinsic_T: [-0.03, 0.0, 0.09]
       extrinsic_R: [ 0.0,  1.0,  0.0, 
                     -1.0,  0.0,  0.0, 
                      0.0,  0.0,  1.0]
       
-      # Ma trận xoay từ Hệ quang học Camera (Optical Frame) sang Lidar
-      # (Z camera cắm tới trước = X lidar, X camera sang phải = -Y lidar, Y camera chúc xuống = -Z lidar)
-      # Rcl: [ 0.0,  -1.0,  0.0,
-      #        0.0,  0.0,  -1.0,
-      #        1.0, 0.0,  0.0]
-      # Rcl: [-1.0,  0.0,  0.0,
-      #        0.0,  0.0, -1.0,
-      #        0.0, -1.0,  0.0]
-      # Ma trận đã lật ngược hình lại cho đúng chiều trên/dưới
       Rcl: [ 1.0,  0.0,  0.0,
              0.0,  0.0, -1.0,
              0.0,  1.0,  0.0]
       
-      # Vị trí của Camera (0.5, 0, 0.65) so với gốc tọa độ Lidar (0, 0, 0.8)
-      Pcl: [0.10, -0.02, -0.04]
+      Pcl: [0.11, 0.0, -0.09]
 
     time_offset: 
       imu_time_offset: 0.0
-      img_time_offset: 0.0 # Mô phỏng nên đồng bộ thời gian hoàn hảo
+      img_time_offset: 0.0 
       exposure_time_init: 0.0
 
     preprocess:
       point_filter_num: 1
       filter_size_surf: 0.1
-      lidar_type: 2         # BẮT BUỘC LÀ 2: Dành cho Velodyne (PointCloud2 chuẩn)
-      scan_line: 16         # Velodyne VLP-16 có 16 tia
-      blind: 0.0          # Giới hạn điểm mù 0.6m (tránh nhìn thấy khung xe)
+      lidar_type: 2        
+      scan_line: 16         
+      blind: 0.15          
 
     vio:
       max_iterations: 5
@@ -95,11 +82,11 @@
       blind_rgb_points: 0.0
 
     evo:
-      seq_name: "TTBot_Sim_01"
+      seq_name: "TTBot_real_01"
       pose_output_en: false
 
     pcd_save:
       pcd_save_en: false
       colmap_output_en: false 
       filter_size_pcd: 0.15
-      interval: -1
+      interval: 1
