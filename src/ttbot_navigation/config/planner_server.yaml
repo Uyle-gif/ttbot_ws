@@ -1,16 +1,19 @@
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 1.0
+    expected_planner_frequency: 2.0
     use_sim_time: true
+    transform_tolerance: 2.0
     planner_plugins: ["GridBased"]
     GridBased:
-      plugin: "ttbot_planning::AStarPlanner"
+     #plugin: "ttbot_planning::AStarPlanner"
 
+     plugin: "ttbot_planning::AStarPlannerNew"
 
 global_costmap:
   global_costmap:
     ros__parameters:
       update_frequency: 5.0
+      transform_tolerance: 2.0
       publish_frequency: 2.0
       global_frame: map
       robot_base_frame: base_link
@@ -44,5 +47,5 @@ global_costmap:
       
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
+        cost_scaling_factor: 5.0
         inflation_radius: 1.0

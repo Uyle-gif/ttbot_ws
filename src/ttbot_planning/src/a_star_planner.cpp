@@ -1,6 +1,7 @@
 #include <cmath>
 #include <algorithm>
 #include "ttbot_planning/a_star_planner.hpp"
+#include <chrono>
 
 namespace ttbot_planning
 {
@@ -40,6 +41,9 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  // ⏱️ 1. BẮT ĐẦU BẤM GIỜ
+  auto start_time = std::chrono::high_resolution_clock::now();
+
   std::vector<std::pair<int, int>> explore_directions = {
     {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
   };
@@ -48,7 +52,8 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
   
   unsigned int size_x = costmap_->getSizeInCellsX();
   unsigned int size_y = costmap_->getSizeInCellsY();
-  std::vector<bool> closed_set(size_x * size_y, false);
+  
+  std::vector<uint8_t> closed_set(size_x * size_y, 0); 
   
   GraphNode start_node = worldToGrid(start.pose);
   GraphNode goal_node = worldToGrid(goal.pose);
@@ -69,7 +74,7 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
 
     unsigned int idx = poseToCell(active_node);
     if(closed_set[idx]) continue;
-    closed_set[idx] = true;
+    closed_set[idx] = 1;
 
     for (const auto & dir : explore_directions) {
         GraphNode new_node = active_node + dir;
@@ -102,6 +107,12 @@ nav_msgs::msg::Path AStarPlanner::createPlan(
     }
     std::reverse(path.poses.begin(), path.poses.end());
 
+    
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed_time = end_time - start_time;
+    RCLCPP_INFO(node_->get_logger(), "[A* Baseline] Planning Time: %.3f ms", elapsed_time.count());
+
+    // --- Action call smoother ---
     if(smooth_client_->action_server_is_ready()){
       nav2_msgs::action::SmoothPath::Goal path_smooth;
       path_smooth.path = path;

@@ -23,7 +23,7 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': use_sim_time}.items()
     )
 
-    ekf_global_config = os.path.join(pkg_share, 'config', 'ekf_global.yaml')
+    ekf_global_config = os.path.join(pkg_share, 'config', 'ekf_global_livo.yaml')
 
     # Navsat Transform (GPS Lat/Lon -> Odom X/Y)
     navsat_transform_node = Node(
@@ -60,5 +60,5 @@ def generate_launch_description():
         use_sim_time_arg,
        local_localization_launch,
        # navsat_transform_node,
-       # ekf_global_node
+       ekf_global_node
     ])

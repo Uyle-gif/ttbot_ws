@@ -190,7 +190,7 @@ def generate_launch_description():
 
         robot_state_publisher,
         
-        sensors_launch,   
+        # sensors_launch,   
         
         ackermann_node,   
         qgc_bridge_node,

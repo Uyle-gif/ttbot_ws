@@ -10,7 +10,7 @@ def generate_launch_description():
     
     # Khai báo đường dẫn file map
     map_yaml_file = LaunchConfiguration('map', default=os.path.join(
-        pkg_ttbot_mapping, 'maps', 'my_map.yaml'))
+        pkg_ttbot_mapping, 'maps', 'bk_map.yaml'))
 
     # 1. Node Map Server (Chạy ở trạng thái Unconfigured)
     map_server_node = Node(

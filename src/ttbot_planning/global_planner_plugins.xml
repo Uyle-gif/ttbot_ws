@@ -4,4 +4,11 @@
       <description>A* Global Planner Plugin for Nav2</description>
     </class>
   </library>
+
+  <library path="a_star_planner_new">
+    <class type="ttbot_planning::AStarPlannerNew" base_class_type="nav2_core::GlobalPlanner">
+      <description>Improved A* Global Planner with Turning Penalty and Prejudgment</description>
+    </class>
+  </library>
+
 </class_libraries>

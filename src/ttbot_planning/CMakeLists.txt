@@ -21,10 +21,10 @@ find_package(nav2_util REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(nav2_msgs REQUIRED)
 
-
 include_directories(include)
 
 add_library(a_star_planner SHARED src/a_star_planner.cpp)
+add_library(a_star_planner_new SHARED src/a_star_planner_new.cpp)
 
 ament_target_dependencies(a_star_planner 
   rclcpp 
@@ -40,9 +40,25 @@ ament_target_dependencies(a_star_planner
   pluginlib
 )
 
+ament_target_dependencies(a_star_planner_new 
+  rclcpp 
+  nav_msgs 
+  nav2_msgs
+  rclcpp_action
+  geometry_msgs 
+  tf2_ros 
+  tf2_geometry_msgs
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  pluginlib
+)
+
+
 pluginlib_export_plugin_description_file(nav2_core global_planner_plugins.xml)
 
-install(TARGETS a_star_planner
+
+install(TARGETS a_star_planner a_star_planner_new
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}

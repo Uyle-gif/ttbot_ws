@@ -1,22 +1,15 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <world name="gps_world">
+  <world name="ttbot_colored_warehouse">
     <physics name="1ms" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
-    <plugin
-      filename="ignition-gazebo-sensors-system"
-      name="ignition::gazebo::systems::Sensors">
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-
-    <plugin
-      filename="ignition-gazebo-navsat-system"
-      name="ignition::gazebo::systems::NavSat">
-    </plugin>
-
+    <plugin filename="ignition-gazebo-navsat-system" name="ignition::gazebo::systems::NavSat"></plugin>
     <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"></plugin>
     <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"></plugin>
     <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"></plugin>
@@ -41,33 +34,32 @@
         </visual>
       </link>
     </model>
-    <!-- <include>
-      <uri>
-        https://fuel.gazebosim.org/1.0/hujp/models/Campus
-      </uri>
-      <name>campus</name>
-      <pose>-3.24 -53.09 0 0 0 1.047</pose>
-    </include> -->
-    <!-- <include>
-      <uri>
-        https://fuel.gazebosim.org/1.0/zaidammag/models/baylands_terrain
-      </uri>
-      <name>baylands_terrain</name>
-      <pose>0 0 0 0 0 0</pose>
-    </include> -->
-
 
     <include>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Warehouse</uri>
-      <name>warehouse</name>
-      <pose>0 0 -0.1 0 0 0</pose> 
+      <uri>https://fuel.gazebosim.org/1.0/danml1/models/simple_colored_warehouse</uri>
+      <name>simple_colored_warehouse</name>
+      <pose>0 0 0 0 0 0</pose> 
     </include>
 
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Brick Box 3x1x3</uri>
+      <name>brick_box_1</name>
+      <pose>2.0 0.0 0.0 0 0 0</pose> </include>
 
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Brick Box 3x1x3</uri>
+      <name>brick_box_2</name>
+      <pose>5.0 1.5 0.0 0 0 1.5707</pose> </include>
 
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Brick Box 3x1x3</uri>
+      <name>brick_box_3</name>
+      <pose>5.0 -1.5 0.0 0 0 1.5707</pose> </include>
 
-
-
+    <include>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Brick Box 3x1x3</uri>
+      <name>brick_box_4</name>
+      <pose>9.0 0.0 0.0 0 0 0.785</pose> </include>
 
     <spherical_coordinates>
       <surface_model>EARTH_WGS84</surface_model>
