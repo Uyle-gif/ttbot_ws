@@ -1,3 +1,15 @@
+'''
+- Robot states, joint states
+- ackermann controller
+- Controller selection (MPC, Stanley, GMPC)
+- global localization
+
+- Optional joystick teleop
+- Optional QGC (app)
+'''
+
+
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -13,40 +25,20 @@ def generate_launch_description():
     pkg_description = get_package_share_directory('ttbot_description')
     pkg_localization = get_package_share_directory('ttbot_localization')
     pkg_controller = get_package_share_directory('ttbot_controller')
-    pkg_sensors = get_package_share_directory('ttbot_sensors') 
-
-    #mux_config = os.path.join(pkg_controller, 'config', 'mux_config.yaml')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     arg_sim_time = DeclareLaunchArgument('use_sim_time', default_value='false') 
 
     run_qgc = LaunchConfiguration('run_qgc')
-    arg_run_qgc = DeclareLaunchArgument('run_qgc', default_value='true')
+    arg_run_qgc = DeclareLaunchArgument('run_qgc', default_value='false')
 
-    imu_port = LaunchConfiguration('imu_port')
-    arg_imu = DeclareLaunchArgument('imu_port', default_value='/dev/ttbot_imu')
-    
-    # stm32_port = LaunchConfiguration('stm32_port')
-    # arg_stm32 = DeclareLaunchArgument('stm32_port', default_value='/dev/ttbot_stm32')
-
-    gps_port = LaunchConfiguration('gps_port')
-    arg_gps = DeclareLaunchArgument('gps_port', default_value='/dev/ttbot_gps')
-
-    gps_baud = LaunchConfiguration('gps_baud')
-    arg_gps_baud = DeclareLaunchArgument('gps_baud', default_value='19200')
 
     run_joy = LaunchConfiguration('run_joy')
-    arg_run_joy = DeclareLaunchArgument('run_joy', default_value='false')
+    arg_run_joy = DeclareLaunchArgument('run_joy', default_value='true')
 
     controller_type = LaunchConfiguration('controller_type')
     arg_controller = DeclareLaunchArgument('controller_type', default_value='mpc')
-
-    run_path = LaunchConfiguration('run_path')
-    arg_run_path = DeclareLaunchArgument('run_path', default_value='false')
-    
-    path_file = LaunchConfiguration('path_file')
-    arg_path = DeclareLaunchArgument('path_file', default_value='path_l.csv')
-   
+  
 
     xacro_file = os.path.join(pkg_description, 'urdf', 'ttbot.urdf.xacro')
     robot_description = ParameterValue(Command(['xacro ', xacro_file, ' is_ignition:=false']), value_type=str)
@@ -58,13 +50,10 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description, 'use_sim_time': use_sim_time}]
     )
 
-    sensors_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_sensors, 'launch', 'sensors.launch.py')),
-        launch_arguments={
-            'imu_port': imu_port,
-            'gps_port': gps_port,
-            'gps_baud': gps_baud
-        }.items()
+    joint_state_publisher_node = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
+        parameters=[{'use_sim_time': use_sim_time}]
     )
 
     ackermann_node = Node(
@@ -76,7 +65,6 @@ def generate_launch_description():
             ('/cmd_vel', '/ackermann_controller/cmd_vel') 
         ]
     )
-
 
     joy_launch_group = GroupAction(
         condition=IfCondition(run_joy),
@@ -114,7 +102,6 @@ def generate_launch_description():
             )
         ]
     )
-
 
     mpc_group = GroupAction(
         condition=IfCondition(PythonExpression(["'", controller_type, "' == 'mpc'"])),
@@ -165,7 +152,6 @@ def generate_launch_description():
                     'input_odom_topic': '/odometry/filtered',
                     'output_odom_topic': '/mpc_state',
                     'cmd_vel_topic': '/ackermann_controller/cmd_vel',
-                    # --- Bổ sung toàn bộ thông số lọc nhiễu vào đây ---
                     'alpha_x': 1.0,    
                     'alpha_y': 1.0,
                     'alpha_yaw': 1.0,
@@ -204,41 +190,25 @@ def generate_launch_description():
         ]
     )
 
-
-    path_pub_launch = GroupAction(
-        condition=IfCondition(run_path),
-        actions=[
-            TimerAction(
-                period=16.0,
-                actions=[
-                    IncludeLaunchDescription(
-                        PythonLaunchDescriptionSource(os.path.join(pkg_controller, 'launch', 'path_publisher.launch.py')),
-                        launch_arguments={'use_sim_time': use_sim_time, 'path_file': path_file}.items()
-                    )
-                ]
-            )
-        ]
-    )
-
-
     return LaunchDescription([
 
         arg_run_qgc,
-        arg_sim_time, arg_controller, arg_run_path, arg_path, 
-        arg_imu,  arg_gps, arg_gps_baud, arg_run_joy, 
-        #arg_stm32,
+        arg_sim_time, 
+        arg_controller, 
+        arg_run_joy, 
 
-
-        # robot_state_publisher,
-        
-        # sensors_launch,   
-        
+        robot_state_publisher,
+        joint_state_publisher_node,
         ackermann_node,   
-        # qgc_bridge_node,
+
+        
         mpc_filter_node,
         joy_launch_group, 
         stamped_mux_node,   
-  #      localization_launch,
-        path_pub_launch,
+
+        localization_launch,
         high_level_control, 
+
+        qgc_bridge_node,
+        
     ])

@@ -73,7 +73,7 @@ def generate_launch_description():
             
             "-x", "0.0",  
             "-y", "0.0",  
-            "-z", "2"   # Thả từ độ cao 0.5m (để tránh kẹt bánh vào đất)
+            "-z", "2"   
         ],
     )
 
@@ -87,7 +87,6 @@ def generate_launch_description():
             "/imu@sensor_msgs/msg/Imu[gz.msgs.IMU",
             "/world/gps_world/model/ttbot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model",
             "/velodyne_points/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked",
-            # --- THÊM 4 DÒNG NÀY CHO REALSENSE D435i ---
             "/camera/rgbd/image@sensor_msgs/msg/Image[gz.msgs.Image",
             "/camera/rgbd/depth_image@sensor_msgs/msg/Image[gz.msgs.Image",
             "/camera/rgbd/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",

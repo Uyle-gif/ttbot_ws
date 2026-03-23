@@ -21,7 +21,7 @@ def generate_launch_description():
     )
 
     # ==== Stanley Params Tuning ====
-    # Giữ nguyên speed nếu muốn test performance, hoặc giảm về 1.0 nếu thấy lắc
+    # Giữ nguyên speed nếu muốn test performance, hoặc giảm về 1.0 nếu thấy lắca
     desired_speed_arg = DeclareLaunchArgument("desired_speed", default_value="1.5") 
     
     wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.65")

@@ -1,3 +1,10 @@
+"""
+Driver's realsense, velodyne, xsens
+
+livo node, rviz2
+"""
+
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -55,6 +62,7 @@ def generate_launch_description():
         parameters=[{'use_sim_time': False}],
         output="screen"
     )
+
     param_blackboard_node = Node(
         package='demo_nodes_cpp',
         executable='parameter_blackboard',

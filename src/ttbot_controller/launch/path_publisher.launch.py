@@ -20,7 +20,6 @@ def generate_launch_description():
         name="path_publisher",
         output="screen",
         parameters=[{
-            # Nối đường dẫn tuyệt đối một cách an toàn
             "file_path": PathJoinSubstitution([pkg_dir, 'path', LaunchConfiguration("path_file")]),
             "frame_id": "map"
         }]
