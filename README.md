@@ -36,3 +36,5 @@ ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttbot_stm32
 2. Launch FAST-LIO/FAST-LIVO on real mode
 3. Launch the navigation stack. (use_sim_time:=false) 
     NOTE: Check the map used by the Navigation map server
+    
+ros2 bag record /mpc_state /mpc_path

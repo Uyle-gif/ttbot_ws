@@ -20,8 +20,7 @@ def generate_launch_description():
         description="Path to CSV file"
     )
 
-    # ==== Stanley Params Tuning ====
-    # Giữ nguyên speed nếu muốn test performance, hoặc giảm về 1.0 nếu thấy lắca
+    
     desired_speed_arg = DeclareLaunchArgument("desired_speed", default_value="1.5") 
     
     wheel_base_arg    = DeclareLaunchArgument("wheel_base", default_value="0.65")
@@ -29,7 +28,6 @@ def generate_launch_description():
     
     k_gain_arg = DeclareLaunchArgument("k_gain", default_value="2.5", description="Cross track error gain")
     
-    # Tăng Soft lên một chút để mượt hơn
     k_soft_arg = DeclareLaunchArgument("k_soft", default_value="0.6", description="Softening gain")
 
     stanley_node = Node(

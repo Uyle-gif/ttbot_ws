@@ -34,7 +34,6 @@ MpcController::MpcController()
     goal_tolerance_ = this->get_parameter("goal_tolerance").as_double();
 
     max_steer_ = deg2rad(max_steer_deg);
-    // Tính max omega dựa trên mô hình Ackermann: w = (v/L) * tan(delta)
     max_omega_ = (std::abs(desired_speed_) / wheel_base_) * std::tan(max_steer_);
 
     current_index_ = 0;
@@ -49,9 +48,6 @@ MpcController::MpcController()
         "/mpc_path", 1,
         std::bind(&MpcController::pathCallback, this, std::placeholders::_1));
 
-    // path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
-    //     "/local_mpc_path", 1,
-    //     std::bind(&MpcController::pathCallback, this, std::placeholders::_1));
 
     cmd_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(
         "/ackermann_controller/cmd_vel", 10);
@@ -59,10 +55,8 @@ MpcController::MpcController()
         "/mpc_tuning", 10,
         std::bind(&MpcController::mpcTuningCallback, this, std::placeholders::_1));
         
-    // --- KHỞI TẠO PUBLISHER ĐỂ VẼ ĐỒ THỊ ---
     error_cte_pub_ = this->create_publisher<std_msgs::msg::Float32>("/mpc/error/cte", 10);
     error_heading_pub_ = this->create_publisher<std_msgs::msg::Float32>("/mpc/error/heading", 10);
-    // -------------------------------------
 
     RCLCPP_INFO(this->get_logger(), 
         "MPC Initialized: N=%d, dt=%.2f, Speed=%.2f, MaxSteer=%.1f deg", 
@@ -96,23 +90,20 @@ void MpcController::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
     if (msg->poses.empty()) return;
 
-    // 1. Lấy dữ liệu raw từ topic
     std::vector<std::pair<double, double>> raw_points;
     raw_points.reserve(msg->poses.size());
     for (const auto &pose : msg->poses) {
         raw_points.emplace_back(pose.pose.position.x, pose.pose.position.y);
     }
 
-    // 2. THUẬT TOÁN VUỐT MƯỢT GÓC (Moving Average Filter)
-    int smooth_passes = 5; // Tăng lên 30 lần lặp để bào mòn hoàn toàn góc vuông gắt
-    int window_size = 2;    // Tầm nhìn 4 điểm trước/sau để tạo bán kính cua đủ rộng cho xe Ackermann
+    int smooth_passes = 20; 
+    int window_size = 3;    
 
     std::vector<std::pair<double, double>> smoothed_points = raw_points;
 
     for (int pass = 0; pass < smooth_passes; ++pass) {
         std::vector<std::pair<double, double>> temp_points = smoothed_points;
         
-        // Bỏ qua điểm đầu và cuối để giữ nguyên điểm xuất phát/đích
         for (size_t i = 1; i < smoothed_points.size() - 1; ++i) {
             double sum_x = 0.0;
             double sum_y = 0.0;
@@ -133,7 +124,6 @@ void MpcController::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
         smoothed_points = temp_points;
     }
 
-    // 3. Cập nhật quỹ đạo đã làm mượt vào hệ thống
     path_points_ = smoothed_points;
     current_index_ = 0;
     has_path_ = true;
@@ -149,7 +139,6 @@ size_t MpcController::findClosestPoint(double x, double y)
     size_t best_idx = current_index_;
     double min_dist_sq = std::numeric_limits<double>::infinity();
 
-    // Tối ưu: Chỉ tìm kiếm trong cửa sổ +100 điểm phía trước
     size_t search_end = std::min(current_index_ + 100, path_points_.size());
     if (current_index_ == 0) search_end = path_points_.size(); 
 
@@ -388,7 +377,6 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
         stop_cmd.twist.linear.x = 0.0;
         stop_cmd.twist.angular.z = 0.0;
         cmd_pub_->publish(stop_cmd);
-        // ----------------------------------
         return; 
     }
 
@@ -407,7 +395,6 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     std_msgs::msg::Float32 head_msg;
     head_msg.data = rad2deg(epsi); 
     error_heading_pub_->publish(head_msg);
-    // ----------------------------------
 
     Control u = solveMPC(ey, epsi, v_ref);
     double delta = u[0];
@@ -415,9 +402,6 @@ void MpcController::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     double omega = (v_ref / wheel_base_) * std::tan(delta);
     omega = std::clamp(omega, -max_omega_, max_omega_);
 
-    // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500,
-    //     "MPC LOG | idx: %zu | ey: %.3f | epsi: %.3f | Delta: %.1f deg",
-    //     idx, ey, epsi, rad2deg(delta));
 
     geometry_msgs::msg::TwistStamped cmd;
     cmd.header.stamp = this->now();
@@ -431,7 +415,6 @@ void MpcController::mpcTuningCallback(const std_msgs::msg::Float32MultiArray::Sh
 {
     if (msg->data.size() < 6) return;
 
-    // Quy ước thứ tự: [0]:Speed, [1]:Np, [2]:dt, [3]:Q_ey, [4]:Q_epsi, [5]:R_delta
     desired_speed_ = (double)msg->data[0];
     int new_Np     = (int)msg->data[1];
     dt_mpc_        = (double)msg->data[2];
@@ -439,9 +422,6 @@ void MpcController::mpcTuningCallback(const std_msgs::msg::Float32MultiArray::Sh
     Q_epsi_        = (double)msg->data[4];
     R_delta_       = (double)msg->data[5];
 
-    // Cập nhật Np cần chú ý: Vì Np thay đổi kích thước ma trận, nhưng
-    // hàm solveMPC() của bạn đã có lệnh "freeOSQPMemory()" ở đầu, 
-    // nên việc thay đổi N_p_ ở đây là AN TOÀN cho vòng lặp kế tiếp.
     if (new_Np != N_p_) {
         N_p_ = new_Np;
         RCLCPP_WARN(this->get_logger(), "MPC Horizon changed to: %d", N_p_);
@@ -449,9 +429,6 @@ void MpcController::mpcTuningCallback(const std_msgs::msg::Float32MultiArray::Sh
 
     // Cập nhật lại giới hạn Omega (vì nó phụ thuộc vào desired_speed_)
     max_omega_ = (std::abs(desired_speed_) / wheel_base_) * std::tan(max_steer_);
-
-    // Log ra để biết đã nhận
-    // RCLCPP_INFO(this->get_logger(), "MPC Tuned: Q_ey=%.1f, Q_epsi=%.1f, R=%.1f", Q_ey_, Q_epsi_, R_delta_);
 }
 
 int main(int argc, char * argv[])

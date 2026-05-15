@@ -138,7 +138,6 @@ void GmpcController::pathCallback(const nav_msgs::msg::Path::SharedPtr msg)
         prev_omega_cmd_ = 0.0;
     }
 
-    // path mới -> reset solver để tránh pattern cũ gây lỗi ngầm
     freeOSQPMemory();
 
     RCLCPP_INFO(this->get_logger(), "--> GMPC received path: %zu points.", new_path->size());

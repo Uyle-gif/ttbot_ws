@@ -15,11 +15,8 @@ public:
     this->declare_parameter("joy_timeout", 0.5);
     joy_timeout_ = this->get_parameter("joy_timeout").as_double();
 
-    // In ra topic name để chắc chắn remap đúng
     RCLCPP_INFO(this->get_logger(), "--> MUX STARTED. Waiting for inputs...");
 
-    // Lưu ý: Topic name ở đây là RELATIVE (không có dấu /)
-    // Nó sẽ phụ thuộc vào Remap trong launch file
     pub_cmd_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_cmd_out", 10);
 
     sub_joy_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
@@ -36,8 +33,7 @@ public:
 private:
   void joyCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg)
   {
-    // [DEBUG] In ra để biết Joy đã vào
-    // RCLCPP_INFO(this->get_logger(), "Got JOY msg -> Publishing...");
+    
     
     last_joy_time_ = this->now();
     pub_cmd_->publish(*msg);
@@ -49,8 +45,6 @@ private:
     double time_diff = (current_time - last_joy_time_).seconds();
 
     if (time_diff > joy_timeout_) {
-        // [DEBUG] In ra để biết MPC được phép chạy
-        // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Got MPC msg -> Publishing (Joy idle)");
         pub_cmd_->publish(*msg);
     } else {
         // [DEBUG] In ra để biết MPC bị chặn

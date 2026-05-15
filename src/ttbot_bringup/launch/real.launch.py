@@ -198,7 +198,6 @@ def generate_launch_description():
         arg_run_joy, 
 
         robot_state_publisher,
-       # joint_state_publisher_node, bug vlll
         ackermann_node,   
 
         

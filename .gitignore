@@ -39,3 +39,4 @@ __pycache__/
 *.jpg
 *.jpeg
 map.pcd
+src/ttbot_viewer/paper/
