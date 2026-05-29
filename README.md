@@ -156,8 +156,8 @@ Before running navigation, check the map used by the Navigation map server.
 
 Physical experiments were conducted using a custom Ackermann-steered mobile robot.
 
-![Physical Robot]
-<img width="1448" height="1086" alt="c4_car" src="https://github.com/user-attachments/assets/1e197d75-f146-46c9-97ed-553a42c45d5f" />
+[Physical Robot](
+<img width="1448" height="1086" alt="c4_car" src="https://github.com/user-attachments/assets/1e197d75-f146-46c9-97ed-553a42c45d5f" />)
 
 
 ## Real-World Path-Tracking Performance
@@ -169,7 +169,7 @@ The proposed architecture was deployed on the physical robot to verify sim-to-re
 
 Both controllers executed well within the 30 Hz (33.3 ms) control loop.
 
-![Runtime Statistics]
+[Runtime Statistics]
 <p align="center">
   <img src="https://github.com/user-attachments/assets/d3463c61-63e3-45b9-9ad2-0bcfde8e1eca" width="500">
 </p>
@@ -187,13 +187,17 @@ Both controllers executed well within the 30 Hz (33.3 ms) control loop.
 An end-to-end real-world navigation experiment validated the complete autonomy pipeline, successfully integrating onboard perception, mapping, path planning, and trajectory tracking. The system achieved smooth tracking behavior with a low tracking error of RMSE = 0.2624 m over a reference path length of 114.0290 m.
 
 ![Environmental Mapping](path/to/fig9.png)
-<img width="1475" height="1066" alt="c4_ggmap" src="https://github.com/user-attachments/assets/24dcb81f-80fd-4c67-9c73-f95225365dfe" />
-<img width="1411" height="1114" alt="c4_map_3d_path" src="https://github.com/user-attachments/assets/ad11d657-691d-48af-a0a0-e659c9392087" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/24dcb81f-80fd-4c67-9c73-f95225365dfe" width="42%" />
+  &nbsp;&nbsp;
+  <img src="https://github.com/user-attachments/assets/ad11d657-691d-48af-a0a0-e659c9392087" width="42%" />
+</p>
 
 
 ![Trajectory Tracking Performance](path/to/fig10.png)
-<img width="7196" height="7128" alt="c4_end2end" src="https://github.com/user-attachments/assets/53598319-b269-405a-83ea-6d74d662c2d0" />
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/53598319-b269-405a-83ea-6d74d662c2d0" width="50%" />
+</p>
 
 **Video Demonstration:** https://youtu.be/2TXuBDscRR4.
 
