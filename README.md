@@ -156,8 +156,8 @@ Before running navigation, check the map used by the Navigation map server.
 
 Physical experiments were conducted using a custom Ackermann-steered mobile robot.
 
-[Physical Robot](
-<img width="1448" height="1086" alt="c4_car" src="https://github.com/user-attachments/assets/1e197d75-f146-46c9-97ed-553a42c45d5f" />)
+[Physical Robot]
+<img width="1448" height="1086" alt="c4_car" src="https://github.com/user-attachments/assets/1e197d75-f146-46c9-97ed-553a42c45d5f" />
 
 
 ## Real-World Path-Tracking Performance
@@ -174,7 +174,7 @@ Both controllers executed well within the 30 Hz (33.3 ms) control loop.
   <img src="https://github.com/user-attachments/assets/d3463c61-63e3-45b9-9ad2-0bcfde8e1eca" width="500">
 </p>
 
-![Real-World Path Tracking]
+[Real-World Path Tracking]
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9205a880-3b4e-4405-b985-ba4c91043992" width="45%" />
   <img src="https://github.com/user-attachments/assets/558b6e6d-5d3c-4ef8-aa3d-c47cd8750556" width="45%" />
@@ -186,7 +186,7 @@ Both controllers executed well within the 30 Hz (33.3 ms) control loop.
 ## Autonomous Navigation Demonstration
 An end-to-end real-world navigation experiment validated the complete autonomy pipeline, successfully integrating onboard perception, mapping, path planning, and trajectory tracking. The system achieved smooth tracking behavior with a low tracking error of RMSE = 0.2624 m over a reference path length of 114.0290 m.
 
-![Environmental Mapping](path/to/fig9.png)
+[Environmental Mapping](path/to/fig9.png)
 <p align="center">
   <img src="https://github.com/user-attachments/assets/24dcb81f-80fd-4c67-9c73-f95225365dfe" width="42%" />
   &nbsp;&nbsp;
@@ -194,7 +194,7 @@ An end-to-end real-world navigation experiment validated the complete autonomy p
 </p>
 
 
-![Trajectory Tracking Performance](path/to/fig10.png)
+[Trajectory Tracking Performance](path/to/fig10.png)
 <p align="center">
   <img src="https://github.com/user-attachments/assets/53598319-b269-405a-83ea-6d74d662c2d0" width="50%" />
 </p>
