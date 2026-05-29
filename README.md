@@ -1,8 +1,4 @@
-À, tôi hiểu rồi, lỗi tôi sơ sót quá! Để tôi làm lại một bản hoàn chỉnh, ghi rõ từng thẻ hình ảnh kèm theo **chú thích nội dung gốc từ bài báo** để bạn nhìn là biết ngay cần lấy file ảnh nào bỏ vào nhé.
 
-Dưới đây là nội dung `README.md` đã được bổ sung vị trí chèn ảnh cực kỳ rõ ràng, bạn chỉ cần copy toàn bộ là xong:
-
-```markdown
 # STR Robot: Setup and Build Guide
 
 ## 1. Prerequisites
