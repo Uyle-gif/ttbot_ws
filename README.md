@@ -1,4 +1,3 @@
-
 # STR Robot: Setup and Build Guide
 
 [![arXiv](https://img.shields.io/badge/arXiv-Paper_Link-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX)
@@ -73,7 +72,7 @@ ls /dev/ttbot_stm32
 ## 3. Build Livox ROS Driver 2
 
 ```bash
-cd ~/STR_Robot/src/livox_ros_driver2
+cd ~/ttbot_ws/src/livox_ros_driver2
 source /opt/ros/humble/setup.bash
 ./build.sh humble
 source install/setup.bash
@@ -85,7 +84,7 @@ source install/setup.bash
 ## 4. Build STR Robot Workspace
 
 ```bash
-cd ~/STR_Robot
+cd ~/ttbot_ws
 source /opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
@@ -111,7 +110,7 @@ Run each command in a separate terminal.
 ### Terminal 1: Robot Bringup
 
 ```bash
-cd ~/STR_Robot
+cd ~/ttbot_ws
 source install/setup.bash
 ros2 launch ttbot_bringup sim.launch.py
 
@@ -120,7 +119,7 @@ ros2 launch ttbot_bringup sim.launch.py
 ### Terminal 2: FAST-LIO Simulation
 
 ```bash
-cd ~/STR_Robot
+cd ~/ttbot_ws
 source install/setup.bash
 ros2 launch fast_lio fast_lio_sim.launch.py
 
@@ -129,7 +128,7 @@ ros2 launch fast_lio fast_lio_sim.launch.py
 ### Terminal 3: Navigation Simulation
 
 ```bash
-cd ~/STR_Robot
+cd ~/ttbot_ws
 source install/setup.bash
 ros2 launch ttbot_navigation navigation_sim.launch.py
 
